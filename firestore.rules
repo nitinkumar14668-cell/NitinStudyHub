@@ -19,13 +19,16 @@ service cloud.firestore {
       return data.keys().hasAll(['title', 'price', 'pdfUrl']) &&
              data.title is string && data.title.size() <= 200 &&
              data.price is number && data.price >= 0 &&
-             data.pdfUrl is string && data.pdfUrl.size() <= 1000;
+             data.pdfUrl is string && data.pdfUrl.size() <= 1000 &&
+             (!('soldCount' in data) || data.soldCount is number) &&
+             (!('tags' in data) || data.tags is list);
     }
 
     // Validation Blueprint for Transaction
     function isValidTransaction(data) {
-      return data.keys().hasAll(['noteId', 'amount', 'status', 'userId', 'createdAt']) &&
-             data.noteId is string && data.noteId.size() <= 128 &&
+      return data.keys().hasAll(['itemIds', 'amount', 'status', 'userId', 'createdAt']) &&
+             data.itemIds is list && data.itemIds.size() >= 1 &&
+             (!('items' in data) || data.items is list) &&
              data.amount is number && data.amount >= 0 &&
              data.status in ['pending', 'verifying', 'approved', 'rejected'] &&
              data.userId == request.auth.uid &&

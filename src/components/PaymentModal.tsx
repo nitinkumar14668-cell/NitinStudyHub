@@ -7,7 +7,7 @@ import { db, storage, auth } from '../lib/firebase';
 import { collection, addDoc, serverTimestamp, updateDoc, doc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { useNavigate } from 'react-router-dom';
-
+import { useCart } from '../lib/CartContext';
 import toast from 'react-hot-toast';
 
 interface PaymentModalProps {
@@ -23,6 +23,7 @@ enum PaymentStep {
 }
 
 export default function PaymentModal({ notes, onClose }: PaymentModalProps) {
+  const { clearCart } = useCart();
   const [step, setStep] = useState<PaymentStep>(PaymentStep.QR_SCAN);
   const [screenshot, setScreenshot] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
@@ -77,6 +78,11 @@ export default function PaymentModal({ notes, onClose }: PaymentModalProps) {
         status: TransactionStatus.VERIFYING,
         updatedAt: serverTimestamp(),
       });
+
+      // Clear cart if this was a cart purchase
+      if (notes.length > 1) {
+        clearCart();
+      }
 
       toast.success("Screenshot uploaded! Wait for admin approval.", { duration: 5000 });
       setStep(PaymentStep.VERIFYING);

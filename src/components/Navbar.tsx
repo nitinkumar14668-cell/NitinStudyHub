@@ -7,6 +7,8 @@ import { useTheme } from '../lib/ThemeContext';
 import { Link, useLocation } from 'react-router-dom';
 import toast from 'react-hot-toast';
 
+import { useCart } from '../lib/CartContext';
+
 interface NavbarProps {
   user: User | null;
 }
@@ -14,6 +16,7 @@ interface NavbarProps {
 export default function Navbar({ user }: NavbarProps) {
   const location = useLocation();
   const { theme, toggleTheme } = useTheme();
+  const { cart } = useCart();
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const isAdmin = user?.email === 'nitinkumar14668@gmail.com';
 
@@ -62,15 +65,26 @@ export default function Navbar({ user }: NavbarProps) {
             </button>
 
             {user && (
-              <Link
-                to="/purchases"
-                className={`flex items-center gap-2 text-sm font-bold transition-all ${
-                  location.pathname === '/purchases' ? 'text-blue-600' : 'text-gray-500 hover:text-gray-900 dark:hover:text-white'
-                }`}
-              >
-                <ShoppingBag className="w-4 h-4" />
-                <span className="hidden sm:inline">My Purchases</span>
-              </Link>
+              <div className="flex items-center gap-4">
+                <Link
+                  to="/purchases"
+                  className={`flex items-center gap-2 text-sm font-bold transition-all ${
+                    location.pathname === '/purchases' ? 'text-blue-600' : 'text-gray-500 hover:text-gray-900 dark:hover:text-white'
+                  }`}
+                >
+                  <ShoppingBag className="w-4 h-4" />
+                  <span className="hidden sm:inline">My Purchases</span>
+                </Link>
+
+                {cart.length > 0 && (
+                  <div className="relative group">
+                    <ShoppingBag className="w-5 h-5 text-blue-600 animate-pulse" />
+                    <span className="absolute -top-2 -right-2 bg-red-500 text-white text-[8px] font-black w-4 h-4 rounded-full flex items-center justify-center border-2 border-white dark:border-gray-950">
+                      {cart.length}
+                    </span>
+                  </div>
+                )}
+              </div>
             )}
 
             {isAdmin && (

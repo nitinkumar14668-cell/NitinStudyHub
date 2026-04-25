@@ -10,16 +10,19 @@
         "price": { "type": "number" },
         "pdfUrl": { "type": "string" },
         "thumbnailUrl": { "type": "string" },
-        "category": { "type": "string" }
+        "category": { "type": "string" },
+        "tags": { "type": "string" },
+        "soldCount": { "type": "number" }
       },
       "required": ["title", "price", "pdfUrl"]
     },
     "Transaction": {
       "title": "Payment Transaction",
-      "description": "Information about a user's payment for a note",
+      "description": "Information about a user's payment for one or more notes",
       "type": "object",
       "properties": {
-        "noteId": { "type": "string" },
+        "itemIds": { "type": "array" },
+        "items": { "type": "array" },
         "amount": { "type": "number" },
         "status": {
           "type": "string",
@@ -33,7 +36,7 @@
         "createdAt": { "type": "string", "format": "date-time" },
         "updatedAt": { "type": "string", "format": "date-time" }
       },
-      "required": ["noteId", "amount", "status", "createdAt"]
+      "required": ["itemIds", "amount", "status", "createdAt"]
     }
   },
   "firestore": {

@@ -6,6 +6,7 @@ import { doc, getDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { Transaction, TransactionStatus, Note } from '../types';
 import { motion, AnimatePresence } from 'motion/react';
 import { Download as DownloadIcon, AlertTriangle, CheckCircle2, Lock, FileText, ArrowRight } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 interface DownloadProps {
   user: User | null;
@@ -79,32 +80,36 @@ export default function Download({ user }: DownloadProps) {
     fetchData();
   }, [transactionId]);
 
-  const handleDownload = async (n: Note) => {
+  const handleDownload = (n: Note) => {
     if (!transaction) return;
+    const link = document.createElement('a');
+    link.href = n.pdfUrl;
+    link.target = '_blank';
+    link.download = `${n.title}.pdf`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    toast.success(`Downloading ${n.title}`);
+  };
+
+  const handleDownloadAll = async () => {
+    if (!transaction || notes.length === 0) return;
+    
+    if (!confirm("This will start all downloads and EXPIRE this link for security. Proceed?")) return;
 
     try {
-      // Trigger download
-      const link = document.createElement('a');
-      link.href = n.pdfUrl;
-      link.target = '_blank';
-      link.download = `${n.title}.pdf`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-
-      // We only mark as downloaded if it's the last one or something?
-      // For now, let's just make it simpler: allow multiple downloads for a verified transaction
-      if (!transaction.downloaded) {
-        const transRef = doc(db, 'transactions', transaction.id);
-        await updateDoc(transRef, {
-          downloaded: true,
-          updatedAt: serverTimestamp()
-        });
-        setTransaction(prev => prev ? { ...prev, downloaded: true } : null);
-      }
+      notes.forEach(n => handleDownload(n));
+      
+      const transRef = doc(db, 'transactions', transaction.id);
+      await updateDoc(transRef, {
+        downloaded: true,
+        updatedAt: serverTimestamp()
+      });
+      setTransaction(prev => prev ? { ...prev, downloaded: true } : null);
+      toast.success("Downloads started!", { duration: 5000 });
     } catch (err) {
       console.error(err);
-      alert("Failed to process download. Please try again.");
+      toast.error("Failed to finalize download status.");
     }
   };
 
@@ -205,7 +210,7 @@ export default function Download({ user }: DownloadProps) {
                 </p>
                 
                 <button
-                  onClick={() => notes.forEach(n => handleDownload(n))}
+                  onClick={handleDownloadAll}
                   className="w-full bg-gray-900 dark:bg-blue-600 text-white py-6 rounded-2xl text-2xl font-black shadow-xl hover:bg-blue-600 dark:hover:bg-blue-700 transition-all flex items-center justify-center gap-4 active:scale-95 dark:shadow-none"
                 >
                   <DownloadIcon className="w-8 h-8" />

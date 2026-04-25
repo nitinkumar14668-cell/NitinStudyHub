@@ -113,7 +113,20 @@ export default function Purchases({ user }: PurchasesProps) {
 
               <div className="space-y-4 mb-8">
                 <div className="flex justify-between items-center text-sm font-medium p-4 bg-gray-50 dark:bg-gray-800/50 rounded-2xl transition-colors">
-                  <span className="text-gray-500 dark:text-gray-400">Amount Paid</span>
+                  <span className="text-gray-500 dark:text-gray-400">Items ({p.items?.length || 1})</span>
+                  <div className="text-right flex flex-col items-end gap-1">
+                    {p.items ? (
+                      p.items.map(item => (
+                        <span key={item.id} className="text-gray-900 dark:text-white font-bold text-xs">{item.title}</span>
+                      ))
+                    ) : (
+                      <span className="text-gray-900 dark:text-white font-bold text-xs">Note #{p.noteId?.slice(-6)}</span>
+                    )}
+                  </div>
+                </div>
+
+                <div className="flex justify-between items-center text-sm font-medium p-4 bg-gray-50 dark:bg-gray-800/50 rounded-2xl transition-colors">
+                  <span className="text-gray-500 dark:text-gray-400">Total Paid</span>
                   <span className="text-gray-900 dark:text-white font-bold">₹{p.amount}</span>
                 </div>
                 {p.status === TransactionStatus.APPROVED ? (

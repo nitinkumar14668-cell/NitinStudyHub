@@ -8,6 +8,7 @@ import PaymentModal from '../components/PaymentModal';
 import { motion, AnimatePresence } from 'motion/react';
 import { Search, Filter, ArrowRight, Sparkles, ShoppingBag, X } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { useCart } from '../lib/CartContext';
 
 interface HomeProps {
   user: User | null;
@@ -46,7 +47,7 @@ const SAMPLE_NOTES: Note[] = [
 export default function Home({ user }: HomeProps) {
   const [notes, setNotes] = useState<Note[]>([]);
   const [checkoutNotes, setCheckoutNotes] = useState<Note[]>([]);
-  const [cart, setCart] = useState<Note[]>([]);
+  const { cart, addToCart, isInCart } = useCart();
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState('All');
@@ -107,17 +108,6 @@ export default function Home({ user }: HomeProps) {
       return;
     }
     setCheckoutNotes([note]);
-  };
-
-  const addToCart = (note: Note) => {
-    const exists = cart.find(n => n.id === note.id);
-    if (exists) {
-      setCart(prev => prev.filter(n => n.id !== note.id));
-      toast.success("Removed from cart");
-    } else {
-      setCart(prev => [...prev, note]);
-      toast.success(`${note.title} added to cart`, { icon: '🛒' });
-    }
   };
 
   const handleCheckoutCart = () => {

@@ -9,6 +9,7 @@ import Purchases from './pages/Purchases';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import { ThemeProvider } from './lib/ThemeContext';
+import { CartProvider } from './lib/CartContext';
 import { motion, AnimatePresence } from 'motion/react';
 import { Toaster } from 'react-hot-toast';
 
@@ -40,23 +41,25 @@ export default function App() {
 
   return (
     <ThemeProvider>
-      <Router>
-        <div className="min-h-screen bg-[#f8f9fa] dark:bg-gray-950 font-sans text-gray-900 dark:text-gray-100 transition-colors duration-300 flex flex-col">
-          <Toaster position="top-center" />
-          <Navbar user={user} />
-          <main className="flex-grow">
-            <AnimatePresence mode="wait">
-              <Routes>
-                <Route path="/" element={<Home user={user} />} />
-                <Route path="/download/:transactionId" element={<Download user={user} />} />
-                <Route path="/admin" element={<Admin user={user} />} />
-                <Route path="/purchases" element={<Purchases user={user} />} />
-              </Routes>
-            </AnimatePresence>
-          </main>
-          <Footer />
-        </div>
-      </Router>
+      <CartProvider>
+        <Router>
+          <div className="min-h-screen bg-[#f8f9fa] dark:bg-gray-950 font-sans text-gray-900 dark:text-gray-100 transition-colors duration-300 flex flex-col">
+            <Toaster position="top-center" />
+            <Navbar user={user} />
+            <main className="flex-grow">
+              <AnimatePresence mode="wait">
+                <Routes>
+                  <Route path="/" element={<Home user={user} />} />
+                  <Route path="/download/:transactionId" element={<Download user={user} />} />
+                  <Route path="/admin" element={<Admin user={user} />} />
+                  <Route path="/purchases" element={<Purchases user={user} />} />
+                </Routes>
+              </AnimatePresence>
+            </main>
+            <Footer />
+          </div>
+        </Router>
+      </CartProvider>
     </ThemeProvider>
   );
 }
