@@ -1,0 +1,49 @@
+{
+  "entities": {
+    "Note": {
+      "title": "Study Note",
+      "description": "Details of the study note PDF",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "price": { "type": "number" },
+        "pdfUrl": { "type": "string" },
+        "thumbnailUrl": { "type": "string" },
+        "category": { "type": "string" }
+      },
+      "required": ["title", "price", "pdfUrl"]
+    },
+    "Transaction": {
+      "title": "Payment Transaction",
+      "description": "Information about a user's payment for a note",
+      "type": "object",
+      "properties": {
+        "noteId": { "type": "string" },
+        "amount": { "type": "number" },
+        "status": {
+          "type": "string",
+          "enum": ["pending", "verifying", "approved", "rejected"]
+        },
+        "screenshotUrl": { "type": "string" },
+        "userId": { "type": "string" },
+        "userEmail": { "type": "string" },
+        "downloadToken": { "type": "string" },
+        "downloaded": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["noteId", "amount", "status", "createdAt"]
+    }
+  },
+  "firestore": {
+    "notes": {
+      "schema": "Note",
+      "description": "Collection of available study notes"
+    },
+    "transactions": {
+      "schema": "Transaction",
+      "description": "Collection of payment transactions and download links"
+    }
+  }
+}
