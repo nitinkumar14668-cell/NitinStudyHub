@@ -560,12 +560,29 @@ export default function Admin({ user }: AdminProps) {
                         </div>
                      </div>
                   </div>
-                  <div className="bg-white/10 backdrop-blur-xl p-8 rounded-[2rem] border border-white/20 text-center">
-                     <p className="text-xs font-black text-gray-400 uppercase tracking-widest mb-2">Pending Jobs</p>
-                     <h3 className="text-5xl font-black">{socialDrafts.length}</h3>
+                  <div className="bg-white/10 backdrop-blur-xl p-8 rounded-[2rem] border border-white/20 text-center flex flex-col justify-center">
+                     <p className="text-xs font-black text-gray-400 uppercase tracking-widest mb-2">{isChannelConnected ? 'Subscribers' : 'Pending Jobs'}</p>
+                     <h3 className="text-5xl font-black">{isChannelConnected ? '12.4K' : socialDrafts.length}</h3>
                   </div>
                </div>
             </div>
+
+            {isChannelConnected && (
+               <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+                  <div className="bg-white dark:bg-gray-900 p-6 rounded-3xl border border-gray-100 dark:border-gray-800">
+                     <p className="text-[10px] font-black text-gray-400 uppercase mb-2">Channel Name</p>
+                     <h4 className="text-xl font-bold dark:text-white">Nitin Study Hub</h4>
+                  </div>
+                  <div className="bg-white dark:bg-gray-900 p-6 rounded-3xl border border-gray-100 dark:border-gray-800">
+                     <p className="text-[10px] font-black text-gray-400 uppercase mb-2">Total Uploads</p>
+                     <h4 className="text-xl font-bold dark:text-white">248 Videos</h4>
+                  </div>
+                  <div className="bg-white dark:bg-gray-900 p-6 rounded-3xl border border-gray-100 dark:border-gray-800">
+                     <p className="text-[10px] font-black text-gray-400 uppercase mb-2">Last Sync</p>
+                     <h4 className="text-xl font-bold dark:text-white">2 mins ago</h4>
+                  </div>
+               </div>
+            )}
 
             <div className="grid lg:grid-cols-12 gap-10">
                {/* Note Selection */}

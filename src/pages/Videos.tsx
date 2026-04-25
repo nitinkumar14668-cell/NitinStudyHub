@@ -23,7 +23,13 @@ const AdModal: React.FC<{ isOpen: boolean; onClose: () => void; videoUrl: string
           exit={{ scale: 0.9, opacity: 0, y: 20 }}
           className="relative bg-white dark:bg-gray-900 w-full max-w-2xl rounded-[3rem] overflow-hidden shadow-2xl border border-gray-100 dark:border-gray-800"
         >
-          <button onClick={onClose} className="absolute top-6 right-6 p-2 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-500 hover:text-red-500 transition-colors z-10">
+          <button 
+            onClick={() => {
+              window.open(videoUrl, '_blank');
+              onClose();
+            }} 
+            className="absolute top-6 right-6 p-2 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-500 hover:text-red-500 transition-colors z-10"
+          >
             <X className="w-5 h-5" />
           </button>
 
@@ -178,7 +184,7 @@ const Videos: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
             {videos.map((video, idx) => (
               <motion.div
-                key={video.id}
+                key={`${video.id}-${idx}`}
                 initial={{ opacity: 0, y: 30 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: idx * 0.05 }}
