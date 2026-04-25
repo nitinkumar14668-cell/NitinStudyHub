@@ -29,7 +29,7 @@ export default function App() {
     <ThemeProvider>
       <CartProvider>
         <Router>
-          <div className="min-h-screen w-full overflow-x-hidden bg-[#f8f9fa] dark:bg-gray-950 font-sans text-gray-900 dark:text-gray-100 transition-colors duration-300 flex flex-col">
+          <div className="min-h-screen w-full overflow-x-hidden font-sans flex flex-col">
             <Toaster position="top-center" />
             <Navbar user={user} />
             <main className="flex-grow">

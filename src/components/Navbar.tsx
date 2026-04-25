@@ -58,10 +58,10 @@ export default function Navbar({ user }: NavbarProps) {
           <div className="flex items-center gap-1.5 sm:gap-4">
             <button
               onClick={toggleTheme}
-              className="p-1.5 sm:p-2 text-gray-500 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+              className="p-1.5 sm:p-2 rounded-xl bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-all active:scale-90"
               title={theme === 'light' ? 'Switch to Dark Mode' : 'Switch to Light Mode'}
             >
-              {theme === 'light' ? <Moon className="w-5 h-5" /> : <Sun className="w-5 h-5" />}
+              {theme === 'light' ? <Moon className="w-5 h-5 fill-current" /> : <Sun className="w-5 h-5 fill-current" />}
             </button>
 
             {user && (
