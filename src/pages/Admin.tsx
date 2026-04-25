@@ -7,6 +7,7 @@ import { db, storage } from '../lib/firebase';
 import { collection, addDoc, getDocs, deleteDoc, doc, serverTimestamp, updateDoc, query, orderBy, limit } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { Note, Transaction, TransactionStatus } from '../types';
+import toast from 'react-hot-toast';
 
 interface AdminProps {
   user: User | null;
@@ -65,10 +66,11 @@ export default function Admin({ user }: AdminProps) {
         downloadToken,
         updatedAt: serverTimestamp()
       });
+      toast.success("Transaction Approved!");
       fetchTransactions();
     } catch (err) {
       console.error(err);
-      alert("Failed to approve.");
+      toast.error("Failed to approve.");
     }
   };
 
@@ -78,10 +80,11 @@ export default function Admin({ user }: AdminProps) {
         status: TransactionStatus.REJECTED,
         updatedAt: serverTimestamp()
       });
+      toast.success("Transaction Rejected.");
       fetchTransactions();
     } catch (err) {
       console.error(err);
-      alert("Failed to reject.");
+      toast.error("Failed to reject.");
     }
   };
 
@@ -115,14 +118,14 @@ export default function Admin({ user }: AdminProps) {
         createdAt: serverTimestamp()
       });
 
-      alert("Note uploaded successfully!");
+      toast.success("Note uploaded successfully!");
       setFormData({ title: '', description: '', price: 0, category: 'Math', tags: '' });
       setPdfFile(null);
       setThumbFile(null);
       fetchNotes();
     } catch (err) {
       console.error(err);
-      alert("Upload failed.");
+      toast.error("Upload failed.");
     } finally {
       setIsUploading(false);
     }
@@ -130,8 +133,13 @@ export default function Admin({ user }: AdminProps) {
 
   const handleDelete = async (noteId: string) => {
     if (confirm("Are you sure?")) {
-      await deleteDoc(doc(db, 'notes', noteId));
-      fetchNotes();
+      try {
+        await deleteDoc(doc(db, 'notes', noteId));
+        toast.success("Note deleted successfully.");
+        fetchNotes();
+      } catch (err) {
+        toast.error("Failed to delete note.");
+      }
     }
   };
 

@@ -8,6 +8,8 @@ import { collection, addDoc, serverTimestamp, updateDoc, doc } from 'firebase/fi
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { useNavigate } from 'react-router-dom';
 
+import toast from 'react-hot-toast';
+
 interface PaymentModalProps {
   note: Note;
   onClose: () => void;
@@ -73,34 +75,22 @@ export default function PaymentModal({ note, onClose }: PaymentModalProps) {
         updatedAt: serverTimestamp(),
       });
 
+      toast.success("Screenshot uploaded! Wait for admin approval.", { duration: 5000 });
       setStep(PaymentStep.VERIFYING);
     } catch (error) {
       console.error('Error in payment flow:', error);
-      alert('Something went wrong. Please try again.');
+      toast.error('Something went wrong. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
-  // Simulate verification
+  // Check for approval status
   useEffect(() => {
     if (step === PaymentStep.VERIFYING && transactionId) {
-      const timer = setTimeout(async () => {
-        try {
-          // In a real app, a Cloud Function would do this.
-          // For the demo flow, we have internal rule permission (Demo Self-Verification)
-          const downloadToken = Math.random().toString(36).substring(2, 15);
-          await updateDoc(doc(db, 'transactions', transactionId), {
-            status: TransactionStatus.APPROVED,
-            downloadToken,
-            updatedAt: serverTimestamp(),
-          });
-          setStep(PaymentStep.SUCCESS);
-        } catch (error) {
-          console.error('Mock verification failed:', error);
-        }
-      }, 7000); // 7 seconds wait
-      return () => clearTimeout(timer);
+      // In a real app we might use onSnapshot to listen for changes
+      // For this implementation, the user can check the Purchases page
+      // but let's add a small message
     }
   }, [step, transactionId]);
 

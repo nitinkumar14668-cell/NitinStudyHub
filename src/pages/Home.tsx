@@ -7,6 +7,7 @@ import NoteCard from '../components/NoteCard';
 import PaymentModal from '../components/PaymentModal';
 import { motion, AnimatePresence } from 'motion/react';
 import { Search, Filter, ArrowRight, Sparkles } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 interface HomeProps {
   user: User | null;
@@ -75,17 +76,20 @@ export default function Home({ user }: HomeProps) {
     return matchesSearch && matchesCategory;
   });
 
-  const handleBuy = (note: Note) => {
-    console.log("Buy button clicked for:", note.title);
+  const handleBuy = async (note: Note) => {
     if (!user) {
-      console.log("No user, prompting login...");
+      toast("Please login to proceed!", { icon: '👋' });
       localStorage.setItem('pendingBuyNoteId', note.id);
-      loginWithGoogle().catch(err => {
-        console.error("Login failed:", err);
-      });
+      try {
+        await loginWithGoogle();
+        toast.success("Welcome back!");
+      } catch (err: any) {
+        if (err.code !== 'auth/popup-closed-by-user') {
+          toast.error("Login failed. Check popups.");
+        }
+      }
       return;
     }
-    console.log("User logged in, opening modal for:", note.title);
     setSelectedNote(note);
   };
 
@@ -94,10 +98,10 @@ export default function Home({ user }: HomeProps) {
     if (user && notes.length > 0) {
       const pendingId = localStorage.getItem('pendingBuyNoteId');
       if (pendingId) {
-        console.log("Found pending buy action for ID:", pendingId);
         const note = notes.find(n => n.id === pendingId);
         if (note) {
           setSelectedNote(note);
+          toast.success(`Resuming purchase: ${note.title}`, { duration: 3000 });
         }
         localStorage.removeItem('pendingBuyNoteId');
       }

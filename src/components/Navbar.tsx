@@ -1,14 +1,27 @@
 import { User, signOut } from 'firebase/auth';
 import { auth, loginWithGoogle } from '../lib/firebase';
-import { LogIn, LogOut, BookOpen } from 'lucide-react';
+import { LogIn, LogOut, BookOpen, ShoppingBag, LayoutDashboard } from 'lucide-react';
 import { motion } from 'motion/react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
+import toast from 'react-hot-toast';
 
 interface NavbarProps {
   user: User | null;
 }
 
 export default function Navbar({ user }: NavbarProps) {
+  const location = useLocation();
+  const isAdmin = user?.email === 'nitinkumar14668@gmail.com';
+
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      toast.success("Logged out successfully");
+    } catch (err) {
+      toast.error("Failed to logout");
+    }
+  };
+
   return (
     <nav className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-gray-200">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -21,19 +34,36 @@ export default function Navbar({ user }: NavbarProps) {
           </Link>
 
           <div className="flex items-center gap-4">
-            {user?.email === 'nitinkumar14668@gmail.com' && (
+            {user && (
               <Link
-                to="/admin"
-                className="text-[10px] font-black bg-blue-600 text-white px-3 py-1 rounded-full hover:bg-black transition-all uppercase tracking-widest"
+                to="/purchases"
+                className={`flex items-center gap-2 text-sm font-bold transition-all ${
+                  location.pathname === '/purchases' ? 'text-blue-600' : 'text-gray-500 hover:text-gray-900'
+                }`}
               >
-                Admin Panel
+                <ShoppingBag className="w-4 h-4" />
+                <span className="hidden sm:inline">My Purchases</span>
               </Link>
             )}
+
+            {isAdmin && (
+              <Link
+                to="/admin"
+                className={`flex items-center gap-2 text-sm font-bold transition-all ${
+                  location.pathname === '/admin' ? 'text-blue-600' : 'text-gray-500 hover:text-gray-900'
+                }`}
+              >
+                <LayoutDashboard className="w-4 h-4" />
+                <span className="hidden sm:inline">Admin</span>
+              </Link>
+            )}
+
+            <div className="h-6 w-px bg-gray-200 mx-2" />
+
             {user ? (
-              <div className="flex items-center gap-4">
+              <div className="flex items-center gap-3">
                 <div className="hidden sm:block text-right">
-                  <p className="text-sm font-medium text-gray-900">{user.displayName}</p>
-                  <p className="text-xs text-gray-500">{user.email}</p>
+                  <p className="text-xs font-bold text-gray-900 truncate max-w-[100px]">{user.displayName}</p>
                 </div>
                 <img
                   src={user.photoURL || ''}
@@ -41,11 +71,11 @@ export default function Navbar({ user }: NavbarProps) {
                   className="w-8 h-8 rounded-full border border-gray-200"
                 />
                 <button
-                  onClick={() => signOut(auth)}
+                  onClick={handleLogout}
                   className="p-2 text-gray-500 hover:text-red-600 transition-colors"
                   title="Logout"
                 >
-                  <LogOut className="w-5 h-5" />
+                  <LogOut className="w-4 h-4" />
                 </button>
               </div>
             ) : (
@@ -53,7 +83,7 @@ export default function Navbar({ user }: NavbarProps) {
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
                 onClick={loginWithGoogle}
-                className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors"
+                className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors shadow-sm"
               >
                 <LogIn className="w-4 h-4" />
                 Login
