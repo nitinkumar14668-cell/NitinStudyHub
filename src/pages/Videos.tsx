@@ -4,7 +4,7 @@ import { Youtube, Search, Play, ExternalLink, Loader2, Sparkles, ArrowLeft, X, B
 import { Link } from 'react-router-dom';
 import { fetchEducationalVideos, YouTubeVideo } from '../services/youtubeService';
 
-const AdModal: React.FC<{ isOpen: boolean; onClose: () => void; videoUrl: string }> = ({ isOpen, onClose, videoUrl }) => {
+const AdModal: React.FC<{ isOpen: boolean; onClose: () => void; videoUrl: string; onWatchLocally: (url: string) => void }> = ({ isOpen, onClose, videoUrl, onWatchLocally }) => {
   if (!isOpen) return null;
 
   return (
@@ -25,8 +25,7 @@ const AdModal: React.FC<{ isOpen: boolean; onClose: () => void; videoUrl: string
         >
           <button 
             onClick={() => {
-              window.open(videoUrl, '_blank');
-              onClose();
+              onWatchLocally(videoUrl);
             }} 
             className="absolute top-6 right-6 p-2 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-500 hover:text-red-500 transition-colors z-10"
           >
@@ -40,7 +39,7 @@ const AdModal: React.FC<{ isOpen: boolean; onClose: () => void; videoUrl: string
             </div>
             <div className="md:w-3/5 p-8 lg:p-12">
               <div className="inline-flex items-center gap-2 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest mb-4">
-                <BookOpen className="w-3 h-3" /> Preparation Bundle
+                < BookOpen className="w-3 h-3" /> Preparation Bundle
               </div>
               <h3 className="text-3xl font-black text-gray-900 dark:text-white mb-4 italic">Boost Your Scores!</h3>
               <p className="text-gray-500 dark:text-gray-400 font-medium mb-8 leading-relaxed">
@@ -53,8 +52,7 @@ const AdModal: React.FC<{ isOpen: boolean; onClose: () => void; videoUrl: string
                 </Link>
                 <button 
                   onClick={() => {
-                    window.open(videoUrl, '_blank');
-                    onClose();
+                    onWatchLocally(videoUrl);
                   }}
                   className="w-full py-4 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 font-bold transition-colors"
                 >
@@ -74,6 +72,7 @@ const Videos: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('latest educational lectures');
   const [selectedVideoUrl, setSelectedVideoUrl] = useState<string | null>(null);
+  const [playingVideoId, setPlayingVideoId] = useState<string | null>(null);
 
   const getVideos = async (query: string) => {
     setLoading(true);
@@ -91,24 +90,73 @@ const Videos: React.FC = () => {
     getVideos(searchQuery);
   };
 
+  const extractVideoId = (url: string) => {
+    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+    const match = url.match(regExp);
+    return (match && match[2].length === 11) ? match[2] : null;
+  };
+
   return (
     <div className="min-h-screen bg-[#f8f9fa] dark:bg-gray-950 pt-32 pb-20 px-4 sm:px-6 lg:px-8">
       <AdModal 
         isOpen={!!selectedVideoUrl} 
         onClose={() => setSelectedVideoUrl(null)} 
-        videoUrl={selectedVideoUrl || ''} 
+        videoUrl={selectedVideoUrl || ''}
+        onWatchLocally={(url) => {
+          const id = extractVideoId(url);
+          setPlayingVideoId(id);
+          setSelectedVideoUrl(null);
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }}
       />
 
       <div className="max-w-7xl mx-auto">
         {/* Navigation */}
-        <div className="mb-12">
-          <Link to="/" className="inline-flex items-center gap-2 text-gray-400 hover:text-gray-900 dark:hover:text-white font-black text-xs uppercase tracking-widest transition-colors group">
-            <div className="p-2 rounded-full bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 group-hover:bg-gray-900 group-hover:text-white transition-all">
+        <div className="mb-12 flex items-center justify-between">
+          <Link 
+            to="/" 
+            className="inline-flex items-center gap-3 bg-white dark:bg-gray-900 px-6 py-3 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm hover:shadow-md transition-all group"
+          >
+            <div className="p-1.5 rounded-lg bg-gray-50 dark:bg-gray-800 group-hover:bg-gray-900 group-hover:text-white transition-all">
               <ArrowLeft className="w-4 h-4" />
             </div>
-            Back to Hub
+            <span className="text-xs font-black uppercase tracking-widest text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white transition-colors">
+              Back to Home
+            </span>
           </Link>
+
+          {playingVideoId && (
+            <button 
+              onClick={() => setPlayingVideoId(null)}
+              className="text-xs font-black uppercase tracking-widest text-red-600 hover:underline"
+            >
+              Close Player
+            </button>
+          )}
         </div>
+
+        {/* Video Player Section */}
+        <AnimatePresence>
+          {playingVideoId && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              className="mb-16 overflow-hidden"
+            >
+              <div className="relative aspect-video rounded-[3rem] overflow-hidden shadow-2xl border-4 border-white dark:border-gray-900">
+                <iframe
+                  className="absolute inset-0 w-full h-full"
+                  src={`https://www.youtube.com/embed/${playingVideoId}?autoplay=1`}
+                  title="YouTube video player"
+                  frameBorder="0"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                  allowFullScreen
+                />
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
         <div className="text-center mb-16">
           <motion.div 
             initial={{ opacity: 0, y: 20 }}
