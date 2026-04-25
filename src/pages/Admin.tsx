@@ -520,49 +520,49 @@ export default function Admin({ user }: AdminProps) {
             className="space-y-12"
           >
             {/* Media Hub Header */}
-            <div className="bg-gray-900 rounded-[3rem] p-12 text-white relative overflow-hidden">
+            <div className="bg-gray-900 rounded-[2rem] md:rounded-[3rem] p-6 md:p-12 text-white relative overflow-hidden">
                <div className="absolute top-0 right-0 w-1/2 h-full bg-red-600/20 blur-[120px]" />
-               <div className="relative flex flex-col md:flex-row items-center justify-between gap-10">
-                  <div className="max-w-xl text-center md:text-left">
+               <div className="relative flex flex-col lg:flex-row items-center justify-between gap-10">
+                  <div className="max-w-xl text-center lg:text-left">
                      <div className="inline-flex items-center gap-2 bg-red-600 px-3 py-1 rounded-full text-[10px] font-black uppercase mb-4">
                         <Youtube className="w-3 h-3" /> YouTube Media Integration
                      </div>
-                     <h2 className="text-4xl font-black mb-4">Media Automation</h2>
+                     <h2 className="text-3xl md:text-4xl font-black mb-4">Media Automation</h2>
                      <p className="text-gray-400 font-medium leading-relaxed mb-8">
                         Connect your YouTube channel to enable automatic video uploads and community posts. 
                         AI will handle the metadata generation and PDF page extraction.
                      </p>
                      
-                     <div className="flex flex-wrap items-center gap-4">
+                     <div className="flex flex-col sm:flex-row flex-wrap items-center justify-center lg:justify-start gap-4">
                         <button 
                            onClick={() => {
                               setIsChannelConnected(!isChannelConnected);
                               toast.success(isChannelConnected ? "Channel Disconnected" : "YouTube Channel Connected!");
                            }}
-                           className={`px-8 py-4 rounded-2xl font-black transition-all flex items-center gap-3 ${
+                           className={`w-full sm:w-auto px-8 py-4 rounded-2xl font-black transition-all flex items-center justify-center gap-3 ${
                               isChannelConnected 
                                  ? 'bg-green-600 text-white' 
                                  : 'bg-white text-gray-900 hover:bg-gray-100'
                            }`}
                         >
-                           <Youtube className="w-5 h-5" />
-                           {isChannelConnected ? 'Channel Connected' : 'Connect YouTube Channel'}
+                           <Youtube className="w-5 h-5 flex-shrink-0" />
+                           <span className="truncate">{isChannelConnected ? 'Channel Connected' : 'Connect YouTube Channel'}</span>
                         </button>
                         
-                        <div className="flex items-center gap-3 bg-white/5 backdrop-blur-xl px-6 py-4 rounded-2xl border border-white/10">
-                           <span className="text-xs font-bold text-gray-400 uppercase tracking-widest leading-none">Auto-Post PDF Uploads</span>
+                        <div className="w-full sm:w-auto flex items-center justify-between sm:justify-start gap-3 bg-white/5 backdrop-blur-xl px-6 py-4 rounded-2xl border border-white/10">
+                           <span className="text-[10px] md:text-xs font-bold text-gray-400 uppercase tracking-widest leading-none truncate">Auto-Post PDF Uploads</span>
                            <button 
                               onClick={() => setAutoPostEnabled(!autoPostEnabled)}
-                              className={`w-12 h-6 rounded-full relative transition-colors ${autoPostEnabled ? 'bg-blue-600' : 'bg-gray-700'}`}
+                              className={`w-12 h-6 rounded-full relative transition-colors flex-shrink-0 ${autoPostEnabled ? 'bg-blue-600' : 'bg-gray-700'}`}
                            >
                               <div className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-all ${autoPostEnabled ? 'left-7' : 'left-1'}`} />
                            </button>
                         </div>
                      </div>
                   </div>
-                  <div className="bg-white/10 backdrop-blur-xl p-8 rounded-[2rem] border border-white/20 text-center flex flex-col justify-center">
+                  <div className="w-full lg:w-auto bg-white/10 backdrop-blur-xl p-8 rounded-[2rem] border border-white/20 text-center flex flex-col justify-center">
                      <p className="text-xs font-black text-gray-400 uppercase tracking-widest mb-2">{isChannelConnected ? 'Subscribers' : 'Pending Jobs'}</p>
-                     <h3 className="text-5xl font-black">{isChannelConnected ? '12.4K' : socialDrafts.length}</h3>
+                     <h3 className="text-4xl md:text-5xl font-black">{isChannelConnected ? '12.4K' : socialDrafts.length}</h3>
                   </div>
                </div>
             </div>
@@ -584,9 +584,9 @@ export default function Admin({ user }: AdminProps) {
                </div>
             )}
 
-            <div className="grid lg:grid-cols-12 gap-10">
+            <div className="grid lg:grid-cols-12 gap-10 min-w-0">
                {/* Note Selection */}
-               <div className="lg:col-span-4 space-y-6">
+               <div className="lg:col-span-4 space-y-6 min-w-0">
                   <h3 className="text-xl font-black dark:text-white px-2">1. Select Note to Promote</h3>
                   <div className="space-y-3 max-h-[600px] overflow-y-auto pr-2 custom-scrollbar">
                      {notes.map(note => (
@@ -642,15 +642,15 @@ export default function Admin({ user }: AdminProps) {
                                 </div>
 
                                 {/* Content Details */}
-                                <div className="xl:w-2/3 p-8">
-                                   <div className="flex items-center justify-between mb-8">
-                                      <div>
-                                         <h4 className="text-2xl font-black text-gray-900 dark:text-white mb-1">{draft.aiContent.postTitle}</h4>
-                                         <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Post for: {draft.title}</p>
+                                <div className="xl:w-2/3 p-4 sm:p-8 min-w-0">
+                                   <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-8 gap-4">
+                                      <div className="min-w-0">
+                                         <h4 className="text-xl sm:text-2xl font-black text-gray-900 dark:text-white mb-1 truncate">{draft.aiContent.postTitle}</h4>
+                                         <p className="text-xs font-bold text-gray-400 uppercase tracking-widest truncate">Post for: {draft.title}</p>
                                       </div>
-                                      <div className="text-right">
+                                      <div className="sm:text-right flex-shrink-0">
                                          <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Schedule</p>
-                                         <p className="text-xs font-bold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-600/10 px-3 py-1 rounded-full">+6 hrs Repost</p>
+                                         <p className="text-xs font-bold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-600/10 px-3 py-1 rounded-full inline-block">+6 hrs Repost</p>
                                       </div>
                                    </div>
 
@@ -668,16 +668,16 @@ export default function Admin({ user }: AdminProps) {
                                       ))}
                                    </div>
 
-                                   <div className="flex items-center gap-4">
+                                   <div className="flex items-center gap-2 sm:gap-4 flex-wrap sm:flex-nowrap">
                                       <button 
                                         onClick={() => window.open('https://youtube.com/create', '_blank')}
-                                        className="flex-grow py-4 bg-red-600 text-white rounded-2xl font-black shadow-lg shadow-red-200 dark:shadow-none hover:bg-red-700 flex items-center justify-center gap-2"
+                                        className="flex-grow w-full sm:w-auto py-4 bg-red-600 text-white rounded-2xl font-black shadow-lg shadow-red-200 dark:shadow-none hover:bg-red-700 flex items-center justify-center gap-2"
                                       >
-                                         <Youtube className="w-5 h-5" /> Push to YouTube
+                                         <Youtube className="w-5 h-5 flex-shrink-0" /> Push to YouTube
                                       </button>
                                       <button 
                                         onClick={() => setSocialDrafts(prev => prev.filter(d => d.id !== draft.id))}
-                                        className="p-4 bg-gray-100 dark:bg-gray-800 text-gray-400 rounded-2xl hover:text-red-500 transition-colors"
+                                        className="p-4 w-full sm:w-auto bg-gray-100 dark:bg-gray-800 text-gray-400 rounded-2xl hover:text-red-500 transition-colors flex items-center justify-center"
                                       >
                                          <Trash2 className="w-5 h-5" />
                                       </button>

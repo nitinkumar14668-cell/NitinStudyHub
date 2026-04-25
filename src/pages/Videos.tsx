@@ -218,11 +218,16 @@ const Videos: React.FC = () => {
                   muted={muted}
                   onProgress={handleProgress}
                   onReady={handleReady}
+                  onPlay={() => setPlaying(true)}
+                  onPause={() => setPlaying(false)}
                   config={{
                     youtube: {
-                      embedOptions: { 
-                        playerVars: { showinfo: 0, rel: 0, modestbranding: 1 } 
-                      }
+                      playerVars: { 
+                        showinfo: 0, 
+                        rel: 0, 
+                        modestbranding: 1,
+                        origin: window.location.origin
+                      } 
                     }
                   } as any}
                 />
@@ -231,7 +236,7 @@ const Videos: React.FC = () => {
                 <motion.div 
                   initial={false}
                   animate={{ opacity: showControls ? 1 : 0 }}
-                  className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/20 flex flex-col justify-between p-6 md:p-10 transition-opacity duration-300"
+                  className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/20 flex flex-col justify-between p-6 md:p-10 transition-opacity duration-300 pointer-events-none"
                 >
                   <div className="flex justify-between items-start">
                     <div className="bg-white/10 backdrop-blur-md px-4 py-2 rounded-2xl border border-white/20">
@@ -241,7 +246,7 @@ const Videos: React.FC = () => {
                     </div>
                   </div>
 
-                  <div className="space-y-6">
+                  <div className="space-y-6 pointer-events-auto">
                     {/* Progress Bar */}
                     <div className="relative group/progress">
                       <input
