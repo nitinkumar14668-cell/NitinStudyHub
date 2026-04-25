@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Youtube, Search, Play, Pause, Volume2, VolumeX, Maximize, ExternalLink, Loader2, Sparkles, ArrowLeft, X, BookOpen, ShoppingBag, ArrowRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import ReactPlayer from 'react-player';
-const Player = ReactPlayer as any;
+const Player = (ReactPlayer as any).default || ReactPlayer;
 import { fetchEducationalVideos, YouTubeVideo } from '../services/youtubeService';
 
 const AdModal: React.FC<{ isOpen: boolean; onClose: () => void; videoUrl: string; onWatchLocally: (url: string) => void }> = ({ isOpen, onClose, videoUrl, onWatchLocally }) => {
@@ -107,7 +107,7 @@ const Videos: React.FC = () => {
   };
 
   const handleReady = () => {
-    if (playerRef.current) {
+    if (playerRef.current && typeof playerRef.current.getDuration === 'function') {
       setDuration(playerRef.current.getDuration());
     }
   };
@@ -124,7 +124,10 @@ const Videos: React.FC = () => {
   };
 
   const handleSeekMouseUp = (e: React.MouseEvent<HTMLInputElement> | React.TouchEvent<HTMLInputElement>) => {
-    playerRef.current?.seekTo(parseFloat((e.target as HTMLInputElement).value));
+    const val = parseFloat((e.target as HTMLInputElement).value);
+    if (playerRef.current && typeof playerRef.current.seekTo === 'function') {
+      playerRef.current.seekTo(val);
+    }
   };
 
   const formatTime = (seconds: number) => {
