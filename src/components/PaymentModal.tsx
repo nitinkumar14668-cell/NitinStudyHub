@@ -94,12 +94,24 @@ export default function PaymentModal({ notes, onClose }: PaymentModalProps) {
     }
   };
 
-  // Check for approval status
+  // Simulate automated payment verification
   useEffect(() => {
     if (step === PaymentStep.VERIFYING && transactionId) {
-      // In a real app we might use onSnapshot to listen for changes
-      // For this implementation, the user can check the Purchases page
-      // but let's add a small message
+      const timer = setTimeout(async () => {
+        try {
+          await updateDoc(doc(db, 'transactions', transactionId), {
+            status: TransactionStatus.APPROVED,
+            updatedAt: serverTimestamp(),
+          });
+          setStep(PaymentStep.SUCCESS);
+        } catch (error) {
+          console.error("Error auto-verifying transaction:", error);
+          toast.error("Verification failed. Please contact admin.");
+          setStep(PaymentStep.UPLOAD_SCREENSHOT);
+        }
+      }, 7000); // 7 seconds verification time
+
+      return () => clearTimeout(timer);
     }
   }, [step, transactionId]);
 

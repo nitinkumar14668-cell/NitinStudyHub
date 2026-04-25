@@ -399,9 +399,12 @@ export default function Home({ user }: HomeProps) {
       <AnimatePresence>
         {previewNote && (
           <PreviewModal
+            isOpen={!!previewNote}
             note={previewNote}
             onClose={() => setPreviewNote(null)}
             onBuy={handleBuy}
+            onAddToCart={addToCart}
+            isInCart={!!cart.find(n => n.id === previewNote.id)}
           />
         )}
       </AnimatePresence>
