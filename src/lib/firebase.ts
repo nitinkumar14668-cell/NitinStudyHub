@@ -45,12 +45,16 @@ export const logView = async (noteId: string) => {
       noteId,
       timestamp: serverTimestamp()
     });
+  } catch (err) {
+    console.error("Error logging view (addDoc views):", err);
+  }
 
+  try {
     // 2. Increment counter on the note itself
     await updateDoc(doc(db, 'notes', noteId), {
       viewCount: increment(1)
     });
   } catch (err) {
-    console.error("Error logging view:", err);
+    console.error("Error logging view (updateDoc notes):", err);
   }
 };

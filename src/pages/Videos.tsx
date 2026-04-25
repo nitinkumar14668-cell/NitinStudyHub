@@ -75,7 +75,7 @@ const Videos: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('latest educational lectures');
   const [selectedVideoUrl, setSelectedVideoUrl] = useState<string | null>(null);
   const [playingVideoId, setPlayingVideoId] = useState<string | null>(null);
-  const [playing, setPlaying] = useState(true);
+  const [playing, setPlaying] = useState(false);
   const [played, setPlayed] = useState(0);
   const [duration, setDuration] = useState(0);
   const [volume, setVolume] = useState(0.8);
@@ -110,6 +110,7 @@ const Videos: React.FC = () => {
     if (playerRef.current && typeof playerRef.current.getDuration === 'function') {
       setDuration(playerRef.current.getDuration());
     }
+    setPlaying(true);
   };
 
   const handlePlayPause = () => setPlaying(!playing);
@@ -182,7 +183,10 @@ const Videos: React.FC = () => {
 
           {playingVideoId && (
             <button 
-              onClick={() => setPlayingVideoId(null)}
+              onClick={() => {
+                setPlaying(false);
+                setTimeout(() => setPlayingVideoId(null), 100);
+              }}
               className="text-xs font-black uppercase tracking-widest text-red-600 hover:underline"
             >
               Close Player

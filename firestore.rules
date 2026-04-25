@@ -41,7 +41,7 @@ service cloud.firestore {
       allow read: if true; // Public catalog
       allow create, delete: if isAdmin() && isValidNote(incoming());
       allow update: if (isAdmin() && isValidNote(incoming())) ||
-                     (incoming().diff(existing()).affectedKeys().hasOnly(['viewCount']));
+                     (incoming().diff(existing()).affectedKeys().hasOnly(['viewCount']) && incoming().viewCount is number);
     }
 
     // Views Collection
