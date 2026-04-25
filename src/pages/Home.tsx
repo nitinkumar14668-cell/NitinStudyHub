@@ -7,9 +7,10 @@ import NoteCard from '../components/NoteCard';
 import PaymentModal from '../components/PaymentModal';
 import YouTubeSection from '../components/YouTubeSection';
 import { motion, AnimatePresence } from 'motion/react';
-import { Search, Filter, ArrowRight, Sparkles, ShoppingBag, X } from 'lucide-react';
+import { Search, Filter, ArrowRight, Sparkles, ShoppingBag, X, Youtube } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useCart } from '../lib/CartContext';
+import { Link } from 'react-router-dom';
 
 interface HomeProps {
   user: User | null;
@@ -208,7 +209,7 @@ export default function Home({ user }: HomeProps) {
       </div>
 
       {/* Notes Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 mb-20">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 mb-32">
         <AnimatePresence>
           {filteredNotes.map((note) => (
             <NoteCard 
@@ -220,6 +221,50 @@ export default function Home({ user }: HomeProps) {
             />
           ))}
         </AnimatePresence>
+      </div>
+
+      {/* Video CTA Section */}
+      <div className="mb-32">
+        <div className="bg-red-50 dark:bg-red-900/10 rounded-[4rem] p-12 lg:p-20 relative overflow-hidden group">
+          <div className="absolute top-0 right-0 w-80 h-80 bg-red-600/5 blur-[100px] -z-10 group-hover:scale-110 transition-transform duration-700" />
+          <div className="relative flex flex-col lg:flex-row items-center gap-16">
+            <div className="lg:w-1/2 space-y-8">
+              <div className="inline-flex items-center gap-2 bg-red-600 text-white px-4 py-1 rounded-full text-[10px] font-black uppercase tracking-widest">
+                <Youtube className="w-4 h-4" /> New: Visual Learning
+              </div>
+              <h2 className="text-4xl lg:text-5xl font-black text-gray-900 dark:text-white leading-tight">
+                Master Subjects with <span className="text-red-600">Video Lectures.</span>
+              </h2>
+              <p className="text-gray-500 dark:text-gray-400 text-lg font-medium">
+                Don't just read—watch and learn. We've curated the best educational content from across YouTube to complement your study notes. High-quality lectures for JEE, NEET, and Board Exams.
+              </p>
+              <Link 
+                to="/videos"
+                className="inline-flex items-center gap-3 bg-gray-900 dark:bg-red-600 text-white px-10 py-5 rounded-[2rem] font-bold hover:scale-105 active:scale-95 transition-all shadow-2xl shadow-red-600/20"
+              >
+                Explore Video Hub <ArrowRight className="w-6 h-6" />
+              </Link>
+            </div>
+            <div className="lg:w-1/2 grid grid-cols-2 gap-4">
+               <div className="space-y-4 translate-y-8">
+                  <div className="aspect-video bg-gray-200 dark:bg-gray-800 rounded-3xl overflow-hidden shadow-lg transform -rotate-2">
+                     <img src="https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&q=80&w=2070" className="w-full h-full object-cover opacity-60" />
+                  </div>
+                  <div className="aspect-video bg-gray-200 dark:bg-gray-800 rounded-3xl overflow-hidden shadow-lg transform rotate-2">
+                     <img src="https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&q=80&w=2071" className="w-full h-full object-cover opacity-60" />
+                  </div>
+               </div>
+               <div className="space-y-4">
+                  <div className="aspect-video bg-gray-200 dark:bg-gray-800 rounded-3xl overflow-hidden shadow-lg transform rotate-1">
+                     <img src="https://images.unsplash.com/photo-1523240795612-9a054b0db644?auto=format&fit=crop&q=80&w=2070" className="w-full h-full object-cover opacity-60" />
+                  </div>
+                  <div className="aspect-video bg-gray-200 dark:bg-gray-800 rounded-3xl overflow-hidden shadow-lg transform -rotate-1">
+                     <img src="https://images.unsplash.com/photo-1501504905252-473c47e087f8?auto=format&fit=crop&q=80&w=1974" className="w-full h-full object-cover opacity-60" />
+                  </div>
+               </div>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Cart Floating Button */}

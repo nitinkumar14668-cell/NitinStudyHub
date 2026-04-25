@@ -56,7 +56,7 @@ const Videos: React.FC = () => {
           </motion.p>
 
           {/* Search Bar */}
-          <form onSubmit={handleSearch} className="max-w-2xl mx-auto relative group">
+          <form onSubmit={handleSearch} className="max-w-2xl mx-auto relative group mb-12">
             <div className="absolute inset-0 bg-red-600/10 blur-xl group-hover:bg-red-600/20 transition-all rounded-3xl" />
             <div className="relative flex items-center bg-white dark:bg-gray-900 p-2 rounded-3xl shadow-xl border border-gray-100 dark:border-gray-800">
               <Search className="w-5 h-5 text-gray-400 ml-4" />
@@ -75,6 +75,22 @@ const Videos: React.FC = () => {
               </button>
             </div>
           </form>
+
+          {/* Quick Filters */}
+          <div className="flex flex-wrap items-center justify-center gap-3 mb-16">
+            {['Physics Lectures', 'Chemistry Basics', 'Math Shortcuts', 'Biology NEET', 'JEE Advanced', 'History Notes'].map(pill => (
+              <button
+                key={pill}
+                onClick={() => {
+                  setSearchQuery(pill);
+                  getVideos(pill);
+                }}
+                className="px-6 py-2 bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-full text-xs font-black uppercase tracking-widest text-gray-500 hover:text-red-600 hover:border-red-600 transition-all"
+              >
+                {pill}
+              </button>
+            ))}
+          </div>
         </div>
 
         {/* Content */}

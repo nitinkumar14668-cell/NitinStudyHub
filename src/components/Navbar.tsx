@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { User, signOut } from 'firebase/auth';
 import { auth, loginWithGoogle } from '../lib/firebase';
-import { LogIn, LogOut, BookOpen, ShoppingBag, LayoutDashboard, Loader2, Moon, Sun } from 'lucide-react';
+import { LogIn, LogOut, BookOpen, ShoppingBag, LayoutDashboard, Loader2, Moon, Sun, Youtube } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useTheme } from '../lib/ThemeContext';
 import { Link, useLocation } from 'react-router-dom';
@@ -54,6 +54,26 @@ export default function Navbar({ user }: NavbarProps) {
               Nitin<span className="text-blue-600">StudyHub</span>
             </span>
           </Link>
+
+          <div className="hidden md:flex items-center gap-8 ml-10">
+            <Link
+              to="/"
+              className={`text-sm font-black uppercase tracking-widest transition-all ${
+                location.pathname === '/' ? 'text-blue-600' : 'text-gray-400 hover:text-gray-900 dark:hover:text-white'
+              }`}
+            >
+              Notes
+            </Link>
+            <Link
+              to="/videos"
+              className={`flex items-center gap-2 text-sm font-black uppercase tracking-widest transition-all ${
+                location.pathname === '/videos' ? 'text-red-600' : 'text-gray-400 hover:text-gray-900 dark:hover:text-white'
+              }`}
+            >
+              <Youtube className="w-4 h-4" />
+              Lectures
+            </Link>
+          </div>
 
           <div className="flex items-center gap-1.5 sm:gap-4">
             <button
