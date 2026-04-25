@@ -611,7 +611,7 @@ export default function Admin({ user }: AdminProps) {
                </div>
 
                {/* Drafts Feed */}
-               <div className="lg:col-span-8 space-y-6">
+               <div className="lg:col-span-8 space-y-6 min-w-0">
                   <h3 className="text-xl font-black dark:text-white px-2">2. AI Generated Post Drafts</h3>
                   {socialDrafts.length === 0 ? (
                     <div className="bg-white dark:bg-gray-900 p-20 rounded-[3rem] border border-dashed border-gray-200 dark:border-gray-800 flex flex-col items-center justify-center text-center">

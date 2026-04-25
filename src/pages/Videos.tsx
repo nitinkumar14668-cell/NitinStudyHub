@@ -2,8 +2,8 @@ import React, { useEffect, useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Youtube, Search, Play, Pause, Volume2, VolumeX, Maximize, ExternalLink, Loader2, Sparkles, ArrowLeft, X, BookOpen, ShoppingBag, ArrowRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import ReactPlayer from 'react-player';
-const Player = (ReactPlayer as any).default || ReactPlayer;
+import _ReactPlayer from 'react-player';
+const ReactPlayer = _ReactPlayer as any;
 import { fetchEducationalVideos, YouTubeVideo } from '../services/youtubeService';
 
 const AdModal: React.FC<{ isOpen: boolean; onClose: () => void; videoUrl: string; onWatchLocally: (url: string) => void }> = ({ isOpen, onClose, videoUrl, onWatchLocally }) => {
@@ -110,7 +110,6 @@ const Videos: React.FC = () => {
     if (playerRef.current && typeof playerRef.current.getDuration === 'function') {
       setDuration(playerRef.current.getDuration());
     }
-    setPlaying(true);
   };
 
   const handlePlayPause = () => setPlaying(!playing);
@@ -161,6 +160,7 @@ const Videos: React.FC = () => {
         onWatchLocally={(url) => {
           const id = extractVideoId(url);
           setPlayingVideoId(id);
+          setPlaying(true);
           setSelectedVideoUrl(null);
           window.scrollTo({ top: 0, behavior: 'smooth' });
         }}
@@ -208,7 +208,7 @@ const Videos: React.FC = () => {
                 onMouseMove={handleMouseMove}
                 onMouseLeave={() => playing && setShowControls(false)}
               >
-                <Player
+                <ReactPlayer
                   ref={playerRef}
                   url={`https://www.youtube.com/watch?v=${playingVideoId}`}
                   width="100%"
@@ -216,6 +216,7 @@ const Videos: React.FC = () => {
                   playing={playing}
                   volume={volume}
                   muted={muted}
+                  controls={true}
                   onProgress={handleProgress}
                   onReady={handleReady}
                   onPlay={() => setPlaying(true)}
@@ -225,8 +226,7 @@ const Videos: React.FC = () => {
                       playerVars: { 
                         showinfo: 0, 
                         rel: 0, 
-                        modestbranding: 1,
-                        origin: window.location.origin
+                        modestbranding: 1
                       } 
                     }
                   } as any}
