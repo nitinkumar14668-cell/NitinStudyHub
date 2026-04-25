@@ -1,5 +1,5 @@
 import { initializeApp } from 'firebase/app';
-import { getAuth, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
+import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect } from 'firebase/auth';
 import { initializeFirestore, doc, getDocFromServer, collection, addDoc, serverTimestamp, increment, updateDoc } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
 import firebaseConfig from '../../firebase-applet-config.json';
@@ -20,12 +20,21 @@ googleProvider.setCustomParameters({ prompt: 'select_account' });
 export const loginWithGoogle = async () => {
   console.log('Login initiated...');
   try {
-    const result = await signInWithPopup(auth, googleProvider);
-    console.log('Login successful:', result.user.email);
-    return result.user;
+    const isDev = window.location.hostname.includes('run.app') || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+    
+    if (isDev) {
+      const result = await signInWithPopup(auth, googleProvider);
+      console.log('Login successful:', result.user.email);
+      return result.user;
+    } else {
+      await signInWithRedirect(auth, googleProvider);
+      return null;
+    }
   } catch (error: any) {
     console.error('Firebase Login Error:', error.code, error.message);
-    if (error.code === 'auth/popup-blocked') {
+    if (error.code === 'auth/unauthorized-domain') {
+       alert('Firebase Auth error: This domain is not authorized. Please add ' + window.location.hostname + ' to Authorized Domains in the Firebase Console under Authentication > Settings > Authorized domains.');
+    } else if (error.code === 'auth/popup-blocked') {
       alert('Login popup was blocked! Please allow popups or open this site in Chrome/Safari directly (not inside an app like WhatsApp).');
     } else if (error.code === 'auth/cancelled-popup-request') {
       console.log('User cancelled login popup');
