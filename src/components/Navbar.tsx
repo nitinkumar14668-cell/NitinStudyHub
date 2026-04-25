@@ -1,6 +1,7 @@
+import { useState } from 'react';
 import { User, signOut } from 'firebase/auth';
 import { auth, loginWithGoogle } from '../lib/firebase';
-import { LogIn, LogOut, BookOpen, ShoppingBag, LayoutDashboard } from 'lucide-react';
+import { LogIn, LogOut, BookOpen, ShoppingBag, LayoutDashboard, Loader2 } from 'lucide-react';
 import { motion } from 'motion/react';
 import { Link, useLocation } from 'react-router-dom';
 import toast from 'react-hot-toast';
@@ -11,6 +12,7 @@ interface NavbarProps {
 
 export default function Navbar({ user }: NavbarProps) {
   const location = useLocation();
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
   const isAdmin = user?.email === 'nitinkumar14668@gmail.com';
 
   const handleLogout = async () => {
@@ -19,6 +21,21 @@ export default function Navbar({ user }: NavbarProps) {
       toast.success("Logged out successfully");
     } catch (err) {
       toast.error("Failed to logout");
+    }
+  };
+
+  const handleLogin = async () => {
+    if (isLoggingIn) return;
+    setIsLoggingIn(true);
+    try {
+      await loginWithGoogle();
+      toast.success("Welcome back!");
+    } catch (err: any) {
+      if (err.code !== 'auth/popup-closed-by-user' && err.code !== 'auth/cancelled-popup-request') {
+        toast.error("Login failed. Check browser settings.");
+      }
+    } finally {
+      setIsLoggingIn(false);
     }
   };
 
@@ -79,15 +96,18 @@ export default function Navbar({ user }: NavbarProps) {
                 </button>
               </div>
             ) : (
-              <motion.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                onClick={loginWithGoogle}
-                className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors shadow-sm"
+              <button
+                disabled={isLoggingIn}
+                onClick={handleLogin}
+                className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors shadow-sm disabled:opacity-50"
               >
-                <LogIn className="w-4 h-4" />
-                Login
-              </motion.button>
+                {isLoggingIn ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <LogIn className="w-4 h-4" />
+                )}
+                {isLoggingIn ? 'Connecting...' : 'Login'}
+              </button>
             )}
           </div>
         </div>

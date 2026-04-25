@@ -11,7 +11,7 @@ import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 
 interface PaymentModalProps {
-  note: Note;
+  notes: Note[];
   onClose: () => void;
 }
 
@@ -22,7 +22,7 @@ enum PaymentStep {
   SUCCESS = 'success',
 }
 
-export default function PaymentModal({ note, onClose }: PaymentModalProps) {
+export default function PaymentModal({ notes, onClose }: PaymentModalProps) {
   const [step, setStep] = useState<PaymentStep>(PaymentStep.QR_SCAN);
   const [screenshot, setScreenshot] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
@@ -30,8 +30,10 @@ export default function PaymentModal({ note, onClose }: PaymentModalProps) {
   const [transactionId, setTransactionId] = useState<string | null>(null);
   const navigate = useNavigate();
 
+  const totalPrice = notes.reduce((sum, n) => sum + n.price, 0);
+
   const upiId = "9627XXXX65@fam"; 
-  const upiLink = `upi://pay?pa=${upiId}&pn=NitinStudyHub&am=${note.price}&cu=INR`;
+  const upiLink = `upi://pay?pa=${upiId}&pn=NitinStudyHub&am=${totalPrice}&cu=INR`;
 
   const copyToClipboard = () => {
     navigator.clipboard.writeText(upiId);
@@ -51,8 +53,9 @@ export default function PaymentModal({ note, onClose }: PaymentModalProps) {
     try {
       // 1. Create transaction in Firestore
       const transData = {
-        noteId: note.id,
-        amount: note.price,
+        itemIds: notes.map(n => n.id),
+        items: notes.map(n => ({ id: n.id, title: n.title, price: n.price })),
+        amount: totalPrice,
         status: TransactionStatus.PENDING,
         userId: auth.currentUser.uid,
         userEmail: auth.currentUser.email,
@@ -132,7 +135,7 @@ export default function PaymentModal({ note, onClose }: PaymentModalProps) {
                 </div>
                 <button
                   onClick={copyToClipboard}
-                  className="p-2 bg-white rounded-xl shadow-sm hover:shadow-md transition-all active:scale-95"
+                  className="p-2 bg-white rounded-xl shadow-sm hover:shadow-md transition-all active:bg-gray-50"
                 >
                   {copied ? <Check className="w-5 h-5 text-green-500" /> : <Copy className="w-5 h-5 text-blue-600" />}
                 </button>
@@ -141,11 +144,11 @@ export default function PaymentModal({ note, onClose }: PaymentModalProps) {
               <div className="flex flex-col gap-3">
                 <div className="flex items-center justify-between text-lg font-bold px-2">
                   <span>Payable Amount:</span>
-                  <span className="text-2xl font-black text-blue-600">₹{note.price}</span>
+                  <span className="text-2xl font-black text-blue-600">₹{totalPrice}</span>
                 </div>
                 <button
                   onClick={handleNextStep}
-                  className="w-full bg-gray-900 text-white font-bold py-4 rounded-2xl shadow-xl hover:bg-blue-600 transition-all active:scale-95 mt-4"
+                  className="w-full bg-gray-900 text-white font-bold py-4 rounded-2xl shadow-xl hover:bg-gray-800 transition-all mt-4"
                 >
                   Done, Next Step
                 </button>
@@ -202,7 +205,7 @@ export default function PaymentModal({ note, onClose }: PaymentModalProps) {
                 <button
                   disabled={!screenshot || loading}
                   onClick={handleUpload}
-                  className="w-full bg-gray-900 text-white font-bold py-4 rounded-2xl shadow-xl hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-95"
+                  className="w-full bg-gray-900 text-white font-bold py-4 rounded-2xl shadow-xl hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
                 >
                   {loading ? (
                     <span className="flex items-center justify-center gap-2">
@@ -215,7 +218,7 @@ export default function PaymentModal({ note, onClose }: PaymentModalProps) {
                 </button>
                 <button
                   onClick={() => setStep(PaymentStep.QR_SCAN)}
-                  className="text-gray-400 font-bold py-2 text-sm hover:text-gray-600"
+                  className="text-gray-400 font-bold py-2 text-sm hover:text-gray-600 active:text-gray-900"
                 >
                   Go Back to QR
                 </button>
@@ -277,7 +280,7 @@ export default function PaymentModal({ note, onClose }: PaymentModalProps) {
               
               <button
                 onClick={() => navigate(`/download/${transactionId}`)}
-                className="w-full bg-green-600 text-white font-bold py-5 rounded-2xl shadow-xl hover:bg-green-700 shadow-green-100 transition-all active:scale-95"
+                className="w-full bg-green-600 text-white font-bold py-5 rounded-2xl shadow-xl hover:bg-green-700 shadow-green-100 transition-all active:bg-green-800"
               >
                 Go to Download Page
               </button>

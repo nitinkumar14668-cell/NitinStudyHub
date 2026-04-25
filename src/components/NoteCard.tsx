@@ -1,14 +1,16 @@
 import React from 'react';
 import { Note } from '../types';
 import { motion } from 'motion/react';
-import { Download, Star, Clock } from 'lucide-react';
+import { Download, Star, Clock, ShoppingBag } from 'lucide-react';
 
 interface NoteCardProps {
   note: Note;
   onBuy: (note: Note) => void;
+  onAddToCart: (note: Note) => void;
+  isInCart: boolean;
 }
 
-const NoteCard: React.FC<NoteCardProps> = ({ note, onBuy }) => {
+const NoteCard: React.FC<NoteCardProps> = ({ note, onBuy, onAddToCart, isInCart }) => {
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -50,20 +52,39 @@ const NoteCard: React.FC<NoteCardProps> = ({ note, onBuy }) => {
             <span className="text-2xl font-black text-gray-900">₹{note.price}</span>
           </div>
           
-          <motion.button
-            whileTap={{ scale: 0.95 }}
-            onClick={() => onBuy(note)}
-            className="flex items-center gap-2 bg-gray-900 text-white px-5 py-2.5 rounded-xl font-bold hover:bg-blue-600 transition-colors active:shadow-inner shadow-lg shadow-gray-200"
-          >
-            <Download className="w-4 h-4" />
-            Buy Now
-          </motion.button>
+          <div className="flex gap-2">
+            <button
+              onClick={(e) => {
+                e.preventDefault();
+                onAddToCart(note);
+              }}
+              className={`p-2.5 rounded-xl transition-all shadow-lg ${
+                isInCart 
+                ? 'bg-blue-50 text-blue-600 border border-blue-200' 
+                : 'bg-white text-gray-900 border border-gray-100 hover:bg-gray-50'
+              }`}
+              title={isInCart ? "Remove from Cart" : "Add to Cart"}
+            >
+              <ShoppingBag className={`w-5 h-5 ${isInCart ? 'fill-blue-600' : ''}`} />
+            </button>
+
+            <button
+              onClick={(e) => {
+                e.preventDefault();
+                onBuy(note);
+              }}
+              className="flex items-center gap-2 bg-gray-900 text-white px-5 py-2.5 rounded-xl font-bold hover:bg-blue-600 active:bg-blue-700 transition-all shadow-lg shadow-gray-200"
+            >
+              <Download className="w-4 h-4" />
+              Buy Now
+            </button>
+          </div>
         </div>
       </div>
       
       <div className="px-5 py-3 bg-gray-50 flex items-center gap-4 text-[10px] uppercase tracking-widest font-bold text-gray-400">
         <span className="flex items-center gap-1"><Clock className="w-3 h-3" /> Updated 2d ago</span>
-        <span className="flex items-center gap-1"><Download className="w-3 h-3" /> 1.2k+ Sold</span>
+        <span className="flex items-center gap-1"><Download className="w-3 h-3" /> {note.soldCount || '0'} Sold</span>
       </div>
     </motion.div>
   );

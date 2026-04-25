@@ -6,7 +6,7 @@ import { collection, getDocs } from 'firebase/firestore';
 import NoteCard from '../components/NoteCard';
 import PaymentModal from '../components/PaymentModal';
 import { motion, AnimatePresence } from 'motion/react';
-import { Search, Filter, ArrowRight, Sparkles } from 'lucide-react';
+import { Search, Filter, ArrowRight, Sparkles, ShoppingBag } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 interface HomeProps {
@@ -45,7 +45,9 @@ const SAMPLE_NOTES: Note[] = [
 
 export default function Home({ user }: HomeProps) {
   const [notes, setNotes] = useState<Note[]>([]);
-  const [selectedNote, setSelectedNote] = useState<Note | null>(null);
+  const [checkoutNotes, setCheckoutNotes] = useState<Note[]>([]);
+  const [cart, setCart] = useState<Note[]>([]);
+  const [isCartOpen, setIsCartOpen] = useState(false);
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState('All');
   const [loading, setLoading] = useState(true);
@@ -77,20 +79,50 @@ export default function Home({ user }: HomeProps) {
   });
 
   const handleBuy = async (note: Note) => {
+    console.log('Buy button clicked for:', note.id);
     if (!user) {
-      toast("Please login to proceed!", { icon: '👋' });
+      toast("Please login to proceed!", { icon: '👋', duration: 2000 });
       localStorage.setItem('pendingBuyNoteId', note.id);
+      
+      const loginToast = toast.loading("Opening login...");
       try {
         await loginWithGoogle();
-        toast.success("Welcome back!");
+        toast.success("Welcome back!", { id: loginToast });
       } catch (err: any) {
-        if (err.code !== 'auth/popup-closed-by-user') {
-          toast.error("Login failed. Check popups.");
+        console.error('Buy-init login failed:', err);
+        if (err.code === 'auth/popup-blocked') {
+          toast.error("Popup blocked! Use Chrome/Safari directly.", { id: loginToast });
+        } else if (err.code !== 'auth/popup-closed-by-user' && err.code !== 'auth/cancelled-popup-request') {
+          toast.error("Login failed. Try again.", { id: loginToast });
+        } else {
+          toast.dismiss(loginToast);
         }
       }
       return;
     }
-    setSelectedNote(note);
+    setCheckoutNotes([note]);
+  };
+
+  const addToCart = (note: Note) => {
+    setCart(prev => {
+      const exists = prev.find(n => n.id === note.id);
+      if (exists) {
+        toast.success("Removed from cart");
+        return prev.filter(n => n.id !== note.id);
+      }
+      toast.success(`${note.title} added to cart`, { icon: '🛒' });
+      return [...prev, note];
+    });
+  };
+
+  const handleCheckoutCart = () => {
+    if (cart.length === 0) return;
+    if (!user) {
+      toast("Login to purchase your cart!", { icon: '👋' });
+      return;
+    }
+    setCheckoutNotes(cart);
+    setIsCartOpen(false);
   };
 
   // Check for pending buy action after a redirect/login
@@ -100,7 +132,7 @@ export default function Home({ user }: HomeProps) {
       if (pendingId) {
         const note = notes.find(n => n.id === pendingId);
         if (note) {
-          setSelectedNote(note);
+          setCheckoutNotes([note]);
           toast.success(`Resuming purchase: ${note.title}`, { duration: 3000 });
         }
         localStorage.removeItem('pendingBuyNoteId');
@@ -160,7 +192,7 @@ export default function Home({ user }: HomeProps) {
         </h2>
         
         <div className="flex items-center gap-4 overflow-x-auto pb-2 w-full md:w-auto">
-          {['All', 'Math', 'Physics', 'Chemistry', 'Biology'].map(cat => (
+          {Array.from(new Set(['All', ...notes.map(n => n.category)])).map(cat => (
             <button
               key={cat}
               onClick={() => setCategory(cat)}
@@ -183,10 +215,107 @@ export default function Home({ user }: HomeProps) {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 mb-20">
         <AnimatePresence>
           {filteredNotes.map((note) => (
-            <NoteCard key={note.id} note={note} onBuy={handleBuy} />
+            <NoteCard 
+              key={note.id} 
+              note={note} 
+              onBuy={handleBuy} 
+              onAddToCart={addToCart}
+              isInCart={!!cart.find(n => n.id === note.id)}
+            />
           ))}
         </AnimatePresence>
       </div>
+
+      {/* Cart Floating Button */}
+      {cart.length > 0 && (
+        <motion.button
+          initial={{ scale: 0, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          whileHover={{ scale: 1.1 }}
+          whileTap={{ scale: 0.9 }}
+          onClick={() => setIsCartOpen(true)}
+          className="fixed bottom-8 right-8 z-40 bg-blue-600 text-white p-6 rounded-full shadow-2xl flex items-center gap-3 group"
+        >
+          <div className="relative">
+            <ShoppingBag className="w-6 h-6" />
+            <span className="absolute -top-3 -right-3 bg-red-500 text-white text-[10px] font-black w-6 h-6 rounded-full flex items-center justify-center border-4 border-blue-600 group-hover:scale-110 transition-transform">
+              {cart.length}
+            </span>
+          </div>
+          <span className="font-black text-sm uppercase tracking-widest pr-2">Cart</span>
+        </motion.button>
+      )}
+
+      {/* Cart Sidebar/Drawer */}
+      <AnimatePresence>
+        {isCartOpen && (
+          <>
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsCartOpen(false)}
+              className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50"
+            />
+            <motion.div
+              initial={{ x: '100%' }}
+              animate={{ x: 0 }}
+              exit={{ x: '100%' }}
+              transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+              className="fixed top-0 right-0 h-full w-full max-w-md bg-white z-50 shadow-2xl flex flex-col"
+            >
+              <div className="p-8 border-b border-gray-100 flex items-center justify-between">
+                <h2 className="text-3xl font-black text-gray-900 tracking-tight">Your Cart</h2>
+                <button 
+                  onClick={() => setIsCartOpen(false)}
+                  className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                >
+                  <Filter className="w-6 h-6 text-gray-500" />
+                </button>
+              </div>
+
+              <div className="flex-grow overflow-y-auto p-8 space-y-4">
+                {cart.length === 0 ? (
+                  <div className="text-center py-20">
+                    <ShoppingBag className="w-16 h-16 text-gray-200 mx-auto mb-4" />
+                    <p className="text-gray-400 font-bold uppercase tracking-widest text-xs">Cart is empty</p>
+                  </div>
+                ) : (
+                  cart.map(note => (
+                    <div key={note.id} className="bg-gray-50 p-4 rounded-3xl flex items-center gap-4 relative group">
+                      <img src={note.thumbnailUrl} className="w-16 h-16 rounded-2xl object-cover shadow-sm" />
+                      <div className="flex-grow">
+                        <h4 className="font-bold text-gray-900 line-clamp-1">{note.title}</h4>
+                        <p className="text-blue-600 font-black">₹{note.price}</p>
+                      </div>
+                      <button 
+                         onClick={() => addToCart(note)}
+                         className="p-2 text-gray-400 hover:text-red-500 transition-colors"
+                      >
+                        <Search className="w-5 h-5 rotate-45" /> {/* Close icon substitute if X not imported */}
+                      </button>
+                    </div>
+                  ))
+                )}
+              </div>
+
+              <div className="p-8 bg-gray-50 border-t border-gray-100">
+                <div className="flex items-center justify-between mb-8">
+                  <span className="text-gray-500 font-bold uppercase tracking-widest text-xs">Total Amount</span>
+                  <span className="text-3xl font-black text-gray-900">₹{cart.reduce((sum, n) => sum + n.price, 0)}</span>
+                </div>
+                <button
+                  disabled={cart.length === 0}
+                  onClick={handleCheckoutCart}
+                  className="w-full bg-blue-600 text-white py-5 rounded-[2rem] font-black shadow-xl hover:bg-blue-700 transition-all flex items-center justify-center gap-3 disabled:opacity-50"
+                >
+                  Checkout Now <ArrowRight className="w-6 h-6" />
+                </button>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
 
       {/* Trust Section */}
       <div className="bg-gray-900 rounded-[3rem] p-12 lg:p-20 text-white relative overflow-hidden">
@@ -225,10 +354,10 @@ export default function Home({ user }: HomeProps) {
       </div>
 
       <AnimatePresence>
-        {selectedNote && (
+        {checkoutNotes.length > 0 && (
           <PaymentModal
-            note={selectedNote}
-            onClose={() => setSelectedNote(null)}
+            notes={checkoutNotes}
+            onClose={() => setCheckoutNotes([])}
           />
         )}
       </AnimatePresence>

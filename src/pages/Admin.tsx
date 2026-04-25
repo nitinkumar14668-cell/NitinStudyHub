@@ -26,8 +26,11 @@ export default function Admin({ user }: AdminProps) {
     description: '',
     price: 0,
     category: 'Math',
-    tags: ''
+    tags: '',
+    soldCount: 0
   });
+  const [isCustomCategory, setIsCustomCategory] = useState(false);
+  const [customCategory, setCustomCategory] = useState('');
 
   const isAdmin = user?.email === 'nitinkumar14668@gmail.com';
 
@@ -110,8 +113,11 @@ export default function Admin({ user }: AdminProps) {
       const thumbnailUrl = await getDownloadURL(thumbRef);
 
       // 3. Save Meta to Firestore
+      const finalCategory = isCustomCategory ? customCategory : formData.category;
+      
       const noteDoc = await addDoc(collection(db, 'notes'), {
         ...formData,
+        category: finalCategory,
         tags: formData.tags.split(',').map(t => t.trim()).filter(t => t !== ''),
         pdfUrl,
         thumbnailUrl,
@@ -119,7 +125,9 @@ export default function Admin({ user }: AdminProps) {
       });
 
       toast.success("Note uploaded successfully!");
-      setFormData({ title: '', description: '', price: 0, category: 'Math', tags: '' });
+      setFormData({ title: '', description: '', price: 0, category: 'Math', tags: '', soldCount: 0 });
+      setIsCustomCategory(false);
+      setCustomCategory('');
       setPdfFile(null);
       setThumbFile(null);
       fetchNotes();
@@ -228,7 +236,17 @@ export default function Admin({ user }: AdminProps) {
                           </span>
                         </div>
                         <p className="text-sm text-gray-500 font-medium">
-                          Purchased Note ID: <span className="font-mono text-xs">{trans.noteId}</span> • 
+                          {trans.items ? (
+                            <span className="flex flex-wrap gap-1">
+                              {trans.items.map((it, idx) => (
+                                <span key={it.id} className="bg-gray-100 px-2 py-0.5 rounded text-[10px]">
+                                  {it.title}{idx < trans.items!.length - 1 ? '' : ''}
+                                </span>
+                              ))}
+                            </span>
+                          ) : (
+                            <>Purchased Note ID: <span className="font-mono text-xs">{trans.noteId}</span></>
+                          )}
                           <span className="text-blue-600 font-bold ml-1">₹{trans.amount}</span>
                         </p>
                         <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest flex items-center gap-1 mt-2">
@@ -320,19 +338,50 @@ export default function Admin({ user }: AdminProps) {
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-bold text-gray-400 uppercase tracking-widest mb-2">Category</label>
-                    <select
-                      className="w-full bg-gray-50 border border-gray-100 p-4 rounded-2xl outline-none focus:border-blue-600 transition-all font-bold"
-                      value={formData.category}
-                      onChange={e => setFormData({ ...formData, category: e.target.value })}
-                    >
-                      <option>Math</option>
-                      <option>Physics</option>
-                      <option>Chemistry</option>
-                      <option>Biology</option>
-                      <option>Computer Science</option>
-                    </select>
+                    <div className="flex items-center justify-between mb-2">
+                       <label className="block text-sm font-bold text-gray-400 uppercase tracking-widest">Category</label>
+                       <button 
+                         type="button"
+                         onClick={() => setIsCustomCategory(!isCustomCategory)}
+                         className="text-[10px] font-black text-blue-600 hover:text-black uppercase tracking-widest"
+                       >
+                         {isCustomCategory ? 'Select Existing' : '+ Add New'}
+                       </button>
+                    </div>
+                    {isCustomCategory ? (
+                      <input
+                        required
+                        type="text"
+                        placeholder="Enter category name"
+                        className="w-full bg-gray-50 border border-gray-100 p-4 rounded-2xl outline-none focus:border-blue-600 transition-all font-bold"
+                        value={customCategory}
+                        onChange={e => setCustomCategory(e.target.value)}
+                      />
+                    ) : (
+                      <select
+                        className="w-full bg-gray-50 border border-gray-100 p-4 rounded-2xl outline-none focus:border-blue-600 transition-all font-bold"
+                        value={formData.category}
+                        onChange={e => setFormData({ ...formData, category: e.target.value })}
+                      >
+                        {/* Dynamic categories from notes + defaults */}
+                        {Array.from(new Set(['Math', 'Physics', 'Chemistry', 'Biology', 'Computer Science', ...notes.map(n => n.category)])).map(cat => (
+                          <option key={cat} value={cat}>{cat}</option>
+                        ))}
+                      </select>
+                    )}
                   </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-bold text-gray-400 uppercase tracking-widest mb-2">Simulated Sold Count</label>
+                  <input
+                    required
+                    type="number"
+                    className="w-full bg-gray-50 border border-gray-100 p-4 rounded-2xl outline-none focus:border-blue-600 transition-all font-medium font-mono"
+                    value={formData.soldCount}
+                    onChange={e => setFormData({ ...formData, soldCount: Number(e.target.value) })}
+                  />
+                  <p className="text-[10px] text-gray-400 mt-1 italic italic">Enter a number to simulate real-world sales metrics.</p>
                 </div>
 
                 <div className="grid grid-cols-2 gap-6">
@@ -373,7 +422,9 @@ export default function Admin({ user }: AdminProps) {
                     <img src={note.thumbnailUrl} className="w-16 h-16 rounded-xl object-cover" />
                     <div className="flex-grow">
                       <h4 className="font-bold text-gray-900">{note.title}</h4>
-                      <p className="text-xs text-gray-400 font-bold uppercase tracking-widest">{note.category} • ₹{note.price}</p>
+                      <p className="text-xs text-gray-400 font-bold uppercase tracking-widest">
+                        {note.category} • ₹{note.price} • {note.soldCount || 0} Sold
+                      </p>
                     </div>
                     <button
                       onClick={() => handleDelete(note.id)}

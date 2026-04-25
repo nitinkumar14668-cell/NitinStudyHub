@@ -4,8 +4,8 @@ import { collection, query, where, getDocs, orderBy } from 'firebase/firestore';
 import { Transaction, TransactionStatus } from '../types';
 import { User } from 'firebase/auth';
 import { motion } from 'motion/react';
-import { Download, Clock, CheckCircle2, XCircle, ShoppingBag, ArrowRight } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Download, Clock, CheckCircle2, XCircle, ShoppingBag, ArrowRight, AlertCircle, Loader2 } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
 
 interface PurchasesProps {
   user: User | null;
@@ -14,6 +14,7 @@ interface PurchasesProps {
 export default function Purchases({ user }: PurchasesProps) {
   const [purchases, setPurchases] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (user) {
@@ -80,20 +81,31 @@ export default function Purchases({ user }: PurchasesProps) {
                 <div>
                   <h3 className="text-xl font-bold text-gray-900 mb-1">Transaction #{p.id.slice(-6).toUpperCase()}</h3>
                   <div className="flex items-center gap-2 text-xs font-bold text-gray-400 uppercase tracking-widest">
-                    <Clock className="w-3 h-3" /> {p.createdAt?.toDate().toLocaleDateString()}
+                    <Clock className="w-3 h-3" /> 
+                    {p.createdAt?.toDate().toLocaleDateString('en-IN', {
+                      day: '2-digit',
+                      month: 'short',
+                      year: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit',
+                      hour12: true
+                    })}
                   </div>
                 </div>
                 <div className={`flex items-center gap-2 px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest ${
                   p.status === TransactionStatus.APPROVED ? 'bg-green-100 text-green-700' :
                   p.status === TransactionStatus.REJECTED ? 'bg-red-100 text-red-700' :
-                  'bg-blue-100 text-blue-700'
+                  p.status === TransactionStatus.VERIFYING ? 'bg-blue-100 text-blue-700' :
+                  'bg-yellow-100 text-yellow-700'
                 }`}>
                   {p.status === TransactionStatus.VERIFYING ? (
-                    <Clock className="w-3 h-3" />
+                    <Loader2 className="w-3 h-3 animate-spin" />
                   ) : p.status === TransactionStatus.APPROVED ? (
                     <CheckCircle2 className="w-3 h-3" />
-                  ) : (
+                  ) : p.status === TransactionStatus.REJECTED ? (
                     <XCircle className="w-3 h-3" />
+                  ) : (
+                    <AlertCircle className="w-3 h-3" />
                   )}
                   {p.status}
                 </div>
@@ -127,7 +139,7 @@ export default function Purchases({ user }: PurchasesProps) {
 
               {p.status === TransactionStatus.APPROVED && (
                 <button
-                  onClick={() => alert(`Redirecting to download... Your token: ${p.downloadToken}`)}
+                  onClick={() => navigate(`/download/${p.id}`)}
                   className="w-full bg-blue-600 text-white py-5 rounded-2xl font-black shadow-xl hover:bg-blue-700 transition-all flex items-center justify-center gap-3"
                 >
                   <Download className="w-6 h-6" /> Download PDF

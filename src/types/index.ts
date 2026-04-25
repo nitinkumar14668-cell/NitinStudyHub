@@ -14,11 +14,14 @@ export interface Note {
   thumbnailUrl: string;
   category: string;
   tags?: string[];
+  soldCount?: number;
 }
 
 export interface Transaction {
   id: string;
-  noteId: string;
+  noteId?: string; // Keep for backward compatibility
+  itemIds?: string[];
+  items?: { id: string, title: string, price: number }[];
   amount: number;
   status: TransactionStatus;
   screenshotUrl?: string;
