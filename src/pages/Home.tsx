@@ -76,12 +76,33 @@ export default function Home({ user }: HomeProps) {
   });
 
   const handleBuy = (note: Note) => {
+    console.log("Buy button clicked for:", note.title);
     if (!user) {
-      loginWithGoogle();
+      console.log("No user, prompting login...");
+      localStorage.setItem('pendingBuyNoteId', note.id);
+      loginWithGoogle().catch(err => {
+        console.error("Login failed:", err);
+      });
       return;
     }
+    console.log("User logged in, opening modal for:", note.title);
     setSelectedNote(note);
   };
+
+  // Check for pending buy action after a redirect/login
+  useEffect(() => {
+    if (user && notes.length > 0) {
+      const pendingId = localStorage.getItem('pendingBuyNoteId');
+      if (pendingId) {
+        console.log("Found pending buy action for ID:", pendingId);
+        const note = notes.find(n => n.id === pendingId);
+        if (note) {
+          setSelectedNote(note);
+        }
+        localStorage.removeItem('pendingBuyNoteId');
+      }
+    }
+  }, [user, notes]);
 
   return (
     <motion.div

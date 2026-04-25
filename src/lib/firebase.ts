@@ -15,13 +15,21 @@ export const db = initializeFirestore(app, {
 
 export const storage = getStorage(app);
 export const googleProvider = new GoogleAuthProvider();
+googleProvider.setCustomParameters({ prompt: 'select_account' });
 
 export const loginWithGoogle = async () => {
   try {
     const result = await signInWithPopup(auth, googleProvider);
     return result.user;
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error logging in with Google:', error);
+    if (error.code === 'auth/popup-blocked') {
+      alert('Login popup was blocked! Please allow popups or open in a new tab.');
+    } else if (error.code === 'auth/cancelled-popup-request') {
+      // User closed the popup, ignore
+    } else {
+      alert(`Login failed: ${error.message}`);
+    }
     throw error;
   }
 };
