@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { User } from 'firebase/auth';
 import { Note } from '../types';
 import { db, loginWithGoogle } from '../lib/firebase';
@@ -6,7 +6,7 @@ import { collection, getDocs } from 'firebase/firestore';
 import NoteCard from '../components/NoteCard';
 import PaymentModal from '../components/PaymentModal';
 import { motion, AnimatePresence } from 'motion/react';
-import { Search, Filter, ArrowRight, Sparkles, ShoppingBag } from 'lucide-react';
+import { Search, Filter, ArrowRight, Sparkles, ShoppingBag, X } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 interface HomeProps {
@@ -71,12 +71,18 @@ export default function Home({ user }: HomeProps) {
     fetchNotes();
   }, []);
 
-  const filteredNotes = notes.filter(n => {
-    const matchesSearch = n.title.toLowerCase().includes(search.toLowerCase()) || 
-                         n.category.toLowerCase().includes(search.toLowerCase());
-    const matchesCategory = category === 'All' || n.category === category;
-    return matchesSearch && matchesCategory;
-  });
+  const categories = useMemo(() => {
+    return Array.from(new Set(['All', ...notes.map(n => n.category)]));
+  }, [notes]);
+
+  const filteredNotes = useMemo(() => {
+    return notes.filter(n => {
+      const matchesSearch = n.title.toLowerCase().includes(search.toLowerCase()) || 
+                           n.category.toLowerCase().includes(search.toLowerCase());
+      const matchesCategory = category === 'All' || n.category === category;
+      return matchesSearch && matchesCategory;
+    });
+  }, [notes, search, category]);
 
   const handleBuy = async (note: Note) => {
     console.log('Buy button clicked for:', note.id);
@@ -104,15 +110,14 @@ export default function Home({ user }: HomeProps) {
   };
 
   const addToCart = (note: Note) => {
-    setCart(prev => {
-      const exists = prev.find(n => n.id === note.id);
-      if (exists) {
-        toast.success("Removed from cart");
-        return prev.filter(n => n.id !== note.id);
-      }
+    const exists = cart.find(n => n.id === note.id);
+    if (exists) {
+      setCart(prev => prev.filter(n => n.id !== note.id));
+      toast.success("Removed from cart");
+    } else {
+      setCart(prev => [...prev, note]);
       toast.success(`${note.title} added to cart`, { icon: '🛒' });
-      return [...prev, note];
-    });
+    }
   };
 
   const handleCheckoutCart = () => {
@@ -155,25 +160,25 @@ export default function Home({ user }: HomeProps) {
           transition={{ duration: 1, ease: "easeOut" }}
           className="absolute -top-20 left-1/2 -translate-x-1/2 w-64 h-64 bg-blue-100/50 blur-[100px] -z-10 rounded-full"
         />
-        <div className="inline-flex items-center gap-2 bg-blue-50 text-blue-700 px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-widest mb-6">
+        <div className="inline-flex items-center gap-2 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-widest mb-6 transition-colors">
           <Sparkles className="w-3.5 h-3.5" />
           The Ultimate Student Resource
         </div>
-        <h1 className="text-5xl md:text-7xl font-black text-gray-900 tracking-tight mb-8 leading-[0.9]">
+        <h1 className="text-5xl md:text-7xl font-black text-gray-900 dark:text-white tracking-tight mb-8 leading-[0.9]">
           Unlock Your <span className="text-blue-600">Full Academic</span> Potential.
         </h1>
-        <p className="text-xl text-gray-500 max-w-2xl mx-auto mb-10 leading-relaxed">
+        <p className="text-xl text-gray-500 dark:text-gray-400 max-w-2xl mx-auto mb-10 leading-relaxed">
           Premium, handwritten and structured notes from top educators. <br className="hidden md:block" /> Get instant access after a simple verification.
         </p>
         
         <div className="max-w-xl mx-auto relative group">
           <div className="absolute inset-0 bg-blue-600/10 blur-xl group-hover:bg-blue-600/20 transition-all rounded-2xl" />
-          <div className="relative flex items-center bg-white p-2 rounded-2xl shadow-xl border border-gray-100">
+          <div className="relative flex items-center bg-white dark:bg-gray-900 p-2 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-800">
             <Search className="w-5 h-5 text-gray-400 ml-4" />
             <input
               type="text"
               placeholder="Search by subject, chapter or topic..."
-              className="w-full px-4 py-3 bg-transparent outline-none text-gray-700 font-medium"
+              className="w-full px-4 py-3 bg-transparent outline-none text-gray-700 dark:text-gray-200 font-medium"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
@@ -186,27 +191,27 @@ export default function Home({ user }: HomeProps) {
 
       {/* Featured Sections */}
       <div className="flex flex-col md:flex-row items-center justify-between gap-8 mb-12">
-        <h2 className="text-3xl font-black text-gray-900 flex items-center gap-4">
+        <h2 className="text-3xl font-black text-gray-900 dark:text-white flex items-center gap-4">
           Available Notes
-          <span className="text-sm font-bold text-gray-400 bg-gray-100 px-3 py-1 rounded-full">{filteredNotes.length} Items</span>
+          <span className="text-sm font-bold text-gray-400 bg-gray-100 dark:bg-gray-800 px-3 py-1 rounded-full">{filteredNotes.length} Items</span>
         </h2>
         
         <div className="flex items-center gap-4 overflow-x-auto pb-2 w-full md:w-auto">
-          {Array.from(new Set(['All', ...notes.map(n => n.category)])).map(cat => (
+          {categories.map(cat => (
             <button
               key={cat}
               onClick={() => setCategory(cat)}
               className={`px-6 py-2 rounded-full border text-sm font-bold whitespace-nowrap transition-all ${
                 category === cat 
-                  ? 'bg-gray-900 text-white border-gray-900 shadow-lg' 
-                  : 'bg-white text-gray-500 border-gray-200 hover:border-gray-900 hover:text-gray-900'
+                  ? 'bg-gray-900 dark:bg-blue-600 text-white border-gray-900 dark:border-blue-600 shadow-lg' 
+                  : 'bg-white dark:bg-gray-900 text-gray-500 border-gray-200 dark:border-gray-800 hover:border-gray-900 dark:hover:border-gray-400 hover:text-gray-900 dark:hover:text-white'
               }`}
             >
               {cat}
             </button>
           ))}
-          <button className="p-2 border border-gray-200 rounded-full hover:bg-gray-100 transition-all">
-            <Filter className="w-5 h-5" />
+          <button className="p-2 border border-gray-200 dark:border-gray-800 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-all">
+            <Filter className="w-5 h-5 text-gray-500 dark:text-gray-400" />
           </button>
         </div>
       </div>
@@ -262,13 +267,13 @@ export default function Home({ user }: HomeProps) {
               animate={{ x: 0 }}
               exit={{ x: '100%' }}
               transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-              className="fixed top-0 right-0 h-full w-full max-w-md bg-white z-50 shadow-2xl flex flex-col"
+              className="fixed top-0 right-0 h-full w-full max-w-md bg-white dark:bg-gray-900 z-50 shadow-2xl flex flex-col"
             >
-              <div className="p-8 border-b border-gray-100 flex items-center justify-between">
-                <h2 className="text-3xl font-black text-gray-900 tracking-tight">Your Cart</h2>
+              <div className="p-8 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between">
+                <h2 className="text-3xl font-black text-gray-900 dark:text-white tracking-tight">Your Cart</h2>
                 <button 
                   onClick={() => setIsCartOpen(false)}
-                  className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                  className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors"
                 >
                   <Filter className="w-6 h-6 text-gray-500" />
                 </button>
@@ -277,32 +282,32 @@ export default function Home({ user }: HomeProps) {
               <div className="flex-grow overflow-y-auto p-8 space-y-4">
                 {cart.length === 0 ? (
                   <div className="text-center py-20">
-                    <ShoppingBag className="w-16 h-16 text-gray-200 mx-auto mb-4" />
+                    <ShoppingBag className="w-16 h-16 text-gray-200 dark:text-gray-800 mx-auto mb-4" />
                     <p className="text-gray-400 font-bold uppercase tracking-widest text-xs">Cart is empty</p>
                   </div>
                 ) : (
                   cart.map(note => (
-                    <div key={note.id} className="bg-gray-50 p-4 rounded-3xl flex items-center gap-4 relative group">
+                    <div key={note.id} className="bg-gray-50 dark:bg-gray-800 p-4 rounded-3xl flex items-center gap-4 relative group transition-colors">
                       <img src={note.thumbnailUrl} className="w-16 h-16 rounded-2xl object-cover shadow-sm" />
                       <div className="flex-grow">
-                        <h4 className="font-bold text-gray-900 line-clamp-1">{note.title}</h4>
+                        <h4 className="font-bold text-gray-900 dark:text-white line-clamp-1">{note.title}</h4>
                         <p className="text-blue-600 font-black">₹{note.price}</p>
                       </div>
                       <button 
                          onClick={() => addToCart(note)}
                          className="p-2 text-gray-400 hover:text-red-500 transition-colors"
                       >
-                        <Search className="w-5 h-5 rotate-45" /> {/* Close icon substitute if X not imported */}
+                        <X className="w-5 h-5" />
                       </button>
                     </div>
                   ))
                 )}
               </div>
 
-              <div className="p-8 bg-gray-50 border-t border-gray-100">
+              <div className="p-8 bg-gray-50 dark:bg-gray-800/50 border-t border-gray-100 dark:border-gray-800">
                 <div className="flex items-center justify-between mb-8">
                   <span className="text-gray-500 font-bold uppercase tracking-widest text-xs">Total Amount</span>
-                  <span className="text-3xl font-black text-gray-900">₹{cart.reduce((sum, n) => sum + n.price, 0)}</span>
+                  <span className="text-3xl font-black text-gray-900 dark:text-white">₹{cart.reduce((sum, n) => sum + n.price, 0)}</span>
                 </div>
                 <button
                   disabled={cart.length === 0}

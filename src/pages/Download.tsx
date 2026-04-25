@@ -121,12 +121,12 @@ export default function Download({ user }: DownloadProps) {
   if (error || !transaction) {
     return (
       <div className="max-w-xl mx-auto px-4 py-20 text-center">
-        <div className="bg-red-50 text-red-600 p-8 rounded-[2rem] border border-red-100 mb-8 inline-block">
+        <div className="bg-red-50 dark:bg-red-900/10 text-red-600 dark:text-red-400 p-8 rounded-[2rem] border border-red-100 dark:border-red-900/30 mb-8 inline-block transition-colors">
           <AlertTriangle className="w-16 h-16 mx-auto mb-4" />
           <h2 className="text-2xl font-bold mb-2">Access Denied</h2>
           <p className="font-medium">{error || "Invalid request."}</p>
         </div>
-        <button onClick={() => navigate('/')} className="block mx-auto text-gray-500 font-bold hover:text-gray-900 transition-colors">
+        <button onClick={() => navigate('/')} className="block mx-auto text-gray-500 dark:text-gray-400 font-bold hover:text-gray-900 dark:hover:text-white transition-colors">
           Return to Home
         </button>
       </div>
@@ -143,23 +143,23 @@ export default function Download({ user }: DownloadProps) {
             animate={{ opacity: 1, y: 0 }}
             className="text-center"
           >
-            <div className="bg-orange-50 text-orange-600 p-8 rounded-[2rem] border border-orange-100 mb-8 inline-block">
+            <div className="bg-orange-50 dark:bg-orange-900/10 text-orange-600 dark:text-orange-400 p-8 rounded-[2rem] border border-orange-100 dark:border-orange-900/30 mb-8 inline-block transition-colors">
               <Lock className="w-16 h-16 mx-auto mb-4" />
-              <h2 className="text-3xl font-black mb-4 tracking-tight">Link Expired</h2>
+              <h2 className="text-3xl font-black mb-4 tracking-tight shadow-sm">Link Expired</h2>
               <p className="font-medium text-lg leading-relaxed px-8">
                 This download link was used once and has now expired for security reasons. <br />
                 If you lost your file, please contact support with your transaction ID.
               </p>
             </div>
             
-            <div className="bg-gray-50 p-6 rounded-2xl mb-8 text-left border border-gray-100 max-w-sm mx-auto">
-              <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Transaction ID</p>
-              <p className="font-mono text-sm text-gray-600 break-all">{transaction.id}</p>
+            <div className="bg-gray-50 dark:bg-gray-900/50 p-6 rounded-2xl mb-8 text-left border border-gray-100 dark:border-gray-800 max-w-sm mx-auto transition-colors">
+              <p className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-1">Transaction ID</p>
+              <p className="font-mono text-sm text-gray-600 dark:text-gray-400 break-all">{transaction.id}</p>
             </div>
 
             <button
               onClick={() => navigate('/')}
-              className="px-8 py-3 bg-gray-900 text-white rounded-xl font-bold hover:bg-blue-600 transition-all flex items-center gap-2 mx-auto"
+              className="px-8 py-3 bg-gray-900 dark:bg-blue-600 text-white rounded-xl font-bold hover:bg-gray-800 dark:hover:bg-blue-700 transition-all flex items-center gap-2 mx-auto shadow-xl dark:shadow-none"
             >
               Back to Store <ArrowRight className="w-4 h-4" />
             </button>
@@ -169,7 +169,7 @@ export default function Download({ user }: DownloadProps) {
             key="ready"
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="bg-white rounded-[3rem] shadow-2xl shadow-blue-100 overflow-hidden border border-gray-100"
+            className="bg-white dark:bg-gray-900 rounded-[3rem] shadow-2xl shadow-blue-100 dark:shadow-none overflow-hidden border border-gray-100 dark:border-gray-800 transition-colors"
           >
             <div className="bg-blue-600 p-12 text-white text-center relative overflow-hidden">
                <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 blur-3xl -translate-y-1/2 translate-x-1/2 rounded-full" />
@@ -181,16 +181,16 @@ export default function Download({ user }: DownloadProps) {
             <div className="p-12">
               <div className="space-y-6 mb-12">
                 {notes.map(n => (
-                  <div key={n.id} className="flex items-start gap-6 bg-gray-50 p-6 rounded-3xl border border-gray-100 group hover:bg-blue-50/50 transition-all">
-                    <div className="bg-blue-100 p-4 rounded-2xl text-blue-600 shrink-0">
+                  <div key={n.id} className="flex items-start gap-6 bg-gray-50 dark:bg-gray-800/50 p-6 rounded-3xl border border-gray-100 dark:border-gray-800 group hover:bg-blue-50/50 dark:hover:bg-blue-900/20 transition-all">
+                    <div className="bg-blue-100 dark:bg-gray-700 p-4 rounded-2xl text-blue-600 dark:text-blue-400 shrink-0">
                       <FileText className="w-8 h-8" />
                     </div>
                     <div className="flex-grow">
-                      <h3 className="text-xl font-black text-gray-900 mb-1">{n.title}</h3>
-                      <p className="text-gray-500 text-sm font-medium line-clamp-1">{n.description}</p>
+                      <h3 className="text-xl font-black text-gray-900 dark:text-white mb-1 transition-colors">{n.title}</h3>
+                      <p className="text-gray-500 dark:text-gray-400 text-sm font-medium line-clamp-1 transition-colors">{n.description}</p>
                       <button
                         onClick={() => handleDownload(n)}
-                        className="mt-4 flex items-center gap-2 text-blue-600 font-bold text-xs uppercase tracking-widest hover:text-blue-800 transition-colors"
+                        className="mt-4 flex items-center gap-2 text-blue-600 dark:text-blue-400 font-bold text-xs uppercase tracking-widest hover:text-blue-800 dark:hover:text-blue-300 transition-colors"
                       >
                         <DownloadIcon className="w-4 h-4" /> Download This File
                       </button>
@@ -200,19 +200,19 @@ export default function Download({ user }: DownloadProps) {
               </div>
 
               <div className="space-y-6 text-center">
-                <p className="text-sm font-bold text-orange-600 bg-orange-50 py-2 px-4 rounded-lg inline-block">
+                <p className="text-sm font-bold text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-900/10 py-2 px-4 rounded-lg inline-block transition-colors">
                   ⚠️ IMPORTANT: These links may expire once you start the download.
                 </p>
                 
                 <button
                   onClick={() => notes.forEach(n => handleDownload(n))}
-                  className="w-full bg-gray-900 text-white py-6 rounded-2xl text-2xl font-black shadow-xl hover:bg-blue-600 transition-all flex items-center justify-center gap-4 active:scale-95"
+                  className="w-full bg-gray-900 dark:bg-blue-600 text-white py-6 rounded-2xl text-2xl font-black shadow-xl hover:bg-blue-600 dark:hover:bg-blue-700 transition-all flex items-center justify-center gap-4 active:scale-95 dark:shadow-none"
                 >
                   <DownloadIcon className="w-8 h-8" />
                   Download All Files
                 </button>
                 
-                <p className="text-gray-400 text-xs font-medium italic">
+                <p className="text-gray-400 dark:text-gray-500 text-xs font-medium italic transition-colors">
                   By clicking download, you agree that your one-time access is being used.
                 </p>
               </div>
