@@ -46,6 +46,7 @@ export default function Home({ user }: HomeProps) {
   const [notes, setNotes] = useState<Note[]>([]);
   const [selectedNote, setSelectedNote] = useState<Note | null>(null);
   const [search, setSearch] = useState('');
+  const [category, setCategory] = useState('All');
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -67,10 +68,12 @@ export default function Home({ user }: HomeProps) {
     fetchNotes();
   }, []);
 
-  const filteredNotes = notes.filter(n => 
-    n.title.toLowerCase().includes(search.toLowerCase()) || 
-    n.category.toLowerCase().includes(search.toLowerCase())
-  );
+  const filteredNotes = notes.filter(n => {
+    const matchesSearch = n.title.toLowerCase().includes(search.toLowerCase()) || 
+                         n.category.toLowerCase().includes(search.toLowerCase());
+    const matchesCategory = category === 'All' || n.category === category;
+    return matchesSearch && matchesCategory;
+  });
 
   const handleBuy = (note: Note) => {
     if (!user) {
@@ -135,7 +138,12 @@ export default function Home({ user }: HomeProps) {
           {['All', 'Math', 'Physics', 'Chemistry', 'Biology'].map(cat => (
             <button
               key={cat}
-              className="px-6 py-2 rounded-full border border-gray-200 text-sm font-bold whitespace-nowrap hover:bg-gray-900 hover:text-white hover:border-gray-900 transition-all"
+              onClick={() => setCategory(cat)}
+              className={`px-6 py-2 rounded-full border text-sm font-bold whitespace-nowrap transition-all ${
+                category === cat 
+                  ? 'bg-gray-900 text-white border-gray-900 shadow-lg' 
+                  : 'bg-white text-gray-500 border-gray-200 hover:border-gray-900 hover:text-gray-900'
+              }`}
             >
               {cat}
             </button>

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { User } from 'firebase/auth';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'motion/react';

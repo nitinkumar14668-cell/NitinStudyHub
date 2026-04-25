@@ -1,3 +1,4 @@
+import React from 'react';
 import { Note } from '../types';
 import { motion } from 'motion/react';
 import { Download, Star, Clock } from 'lucide-react';
@@ -7,7 +8,7 @@ interface NoteCardProps {
   onBuy: (note: Note) => void;
 }
 
-export default function NoteCard({ note, onBuy }: NoteCardProps) {
+const NoteCard: React.FC<NoteCardProps> = ({ note, onBuy }) => {
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -66,4 +67,6 @@ export default function NoteCard({ note, onBuy }: NoteCardProps) {
       </div>
     </motion.div>
   );
-}
+};
+
+export default NoteCard;
