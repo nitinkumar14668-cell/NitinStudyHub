@@ -51,69 +51,91 @@ export default function PaymentModal({ notes, onClose }: PaymentModalProps) {
   const handleUpload = async () => {
     if (!screenshot || !auth.currentUser) return;
     setLoading(true);
+
     try {
-      // 1. Create transaction in Firestore
-      const transData = {
-        itemIds: notes.map(n => n.id),
-        items: notes.map(n => ({ id: n.id, title: n.title, price: n.price })),
-        amount: totalPrice,
-        status: TransactionStatus.PENDING,
-        userId: auth.currentUser.uid,
-        userEmail: auth.currentUser.email,
-        downloaded: false,
-        createdAt: serverTimestamp(),
-      };
-      const docRef = await addDoc(collection(db, 'transactions'), transData);
-      const transId = docRef.id;
-      setTransactionId(transId);
-
-      // 2. Upload screenshot to Storage
-      const storageRef = ref(storage, `screenshots/${transId}/${screenshot.name}`);
-      const uploadResult = await uploadBytes(storageRef, screenshot);
-      const screenshotUrl = await getDownloadURL(uploadResult.ref);
-
-      // 3. Update transaction with screenshot and change status to verifying
-      await updateDoc(doc(db, 'transactions', transId), {
-        screenshotUrl,
-        status: TransactionStatus.VERIFYING,
-        updatedAt: serverTimestamp(),
-      });
-
-      // Clear cart if this was a cart purchase
-      if (notes.length > 1) {
-        clearCart();
-      }
-
-      toast.success("Screenshot uploaded! Wait for admin approval.", { duration: 5000 });
+      // Show verifying step immediately for better UX
       setStep(PaymentStep.VERIFYING);
+
+      return new Promise<void>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(screenshot);
+        reader.onload = async () => {
+          try {
+            const base64Data = reader.result as string;
+            const mimeType = screenshot.type;
+
+            // Import dynamically to avoid loading it on every render component
+            const { verifyPaymentScreenshot } = await import('../services/aiService');
+            
+            // Call Gemini
+            const verification = await verifyPaymentScreenshot(base64Data, mimeType, totalPrice);
+
+            if (!verification || !verification.isValid) {
+              toast.error(verification?.reason || 'Invalid screenshot. Please upload a real, clear payment proof.');
+              setStep(PaymentStep.UPLOAD_SCREENSHOT);
+              setLoading(false);
+              resolve();
+              return;
+            }
+
+            // If valid, then proceed with Firebase write
+            const transData = {
+              itemIds: notes.map(n => n.id),
+              items: notes.map(n => ({ id: n.id, title: n.title, price: n.price })),
+              amount: totalPrice,
+              status: TransactionStatus.APPROVED, // auto approved since verified
+              userId: auth.currentUser!.uid,
+              userEmail: auth.currentUser!.email,
+              downloaded: false,
+              createdAt: serverTimestamp(),
+              verificationRef: verification.transactionId || null,
+            };
+            const docRef = await addDoc(collection(db, 'transactions'), transData);
+            const transId = docRef.id;
+            setTransactionId(transId);
+
+            // 2. Upload screenshot to Storage (optimistic, don't wait if slow, but let's wait)
+            const storageRef = ref(storage, `screenshots/${transId}/${screenshot.name}`);
+            const uploadResult = await uploadBytes(storageRef, screenshot);
+            const screenshotUrl = await getDownloadURL(uploadResult.ref);
+
+            await updateDoc(doc(db, 'transactions', transId), {
+              screenshotUrl,
+              updatedAt: serverTimestamp(),
+            });
+
+            if (notes.length > 1) {
+              clearCart();
+            }
+
+            toast.success("Payment Verified via AI!", { duration: 4000 });
+            setStep(PaymentStep.SUCCESS);
+            setLoading(false);
+            resolve();
+          } catch (err: any) {
+             console.error("Internal processing error", err);
+             toast.error("Error connecting to server. Try again.");
+             setStep(PaymentStep.UPLOAD_SCREENSHOT);
+             setLoading(false);
+             reject(err);
+          }
+        };
+        reader.onerror = (err) => {
+           toast.error("Failed to read image.");
+           setStep(PaymentStep.UPLOAD_SCREENSHOT);
+           setLoading(false);
+           reject(err);
+        };
+      });
     } catch (error) {
       console.error('Error in payment flow:', error);
       toast.error('Something went wrong. Please try again.');
-    } finally {
+      setStep(PaymentStep.UPLOAD_SCREENSHOT);
       setLoading(false);
     }
   };
 
-  // Simulate automated payment verification
-  useEffect(() => {
-    if (step === PaymentStep.VERIFYING && transactionId) {
-      const timer = setTimeout(async () => {
-        try {
-          await updateDoc(doc(db, 'transactions', transactionId), {
-            status: TransactionStatus.APPROVED,
-            updatedAt: serverTimestamp(),
-          });
-          setStep(PaymentStep.SUCCESS);
-        } catch (error) {
-          console.error("Error auto-verifying transaction:", error);
-          toast.error("Verification failed. Please contact admin.");
-          setStep(PaymentStep.UPLOAD_SCREENSHOT);
-        }
-      }, 7000); // 7 seconds verification time
 
-      return () => clearTimeout(timer);
-    }
-  }, [step, transactionId]);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">

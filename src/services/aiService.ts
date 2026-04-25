@@ -2,6 +2,54 @@ import { GoogleGenAI } from "@google/genai";
 
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || '' });
 
+export const verifyPaymentScreenshot = async (base64Image: string, mimeType: string, expectedAmount: number) => {
+  try {
+    const prompt = `
+      You are a strict payment verification assistant. You need to analyze this image to check if it's a valid and successful UPI or bank payment screenshot.
+      The expected amount is ₹${expectedAmount}.
+      Extract the Transaction ID, UTR, or UPI Reference Number (must be exactly 12 digits or a valid format), Amount Paid, and check if the payment is 'Successful' or 'Completed'.
+      Also check for signs of a fake screenshot (e.g., impossible dates, obvious edits, missing UTR).
+      A screenshot is ONLY valid if:
+      1. It clearly shows a successful payment.
+      2. The amount matches exactly ₹${expectedAmount}.
+      3. It has a visible and valid Transaction ID or UTR.
+      
+      Return the result strictly in JSON format.
+      Example JSON:
+      {
+        "isValid": true,
+        "amount": 250,
+        "transactionId": "312345678901",
+        "reason": "Payment successful and amount matches."
+      }
+    `;
+
+    const imagePart = {
+      inlineData: {
+        data: base64Image.split(',')[1] || base64Image,
+        mimeType
+      }
+    };
+
+    const response = await ai.models.generateContent({
+      model: "gemini-3-flash-preview",
+      contents: [prompt, imagePart],
+    });
+
+    const text = response.text || '';
+    
+    // Extract JSON from the response
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      return JSON.parse(jsonMatch[0]);
+    }
+    
+    return { isValid: false, reason: "Could not parse verification result." };
+  } catch (error) {
+    console.error("AI Payment Verification Error:", error);
+    return { isValid: false, reason: "Verification service error." };
+  }
+};
 export const generateNotePromotion = async (noteTitle: string, description: string, category: string) => {
   try {
     const prompt = `
