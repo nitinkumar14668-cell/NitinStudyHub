@@ -5,6 +5,7 @@ import { db, loginWithGoogle } from '../lib/firebase';
 import { collection, getDocs } from 'firebase/firestore';
 import NoteCard from '../components/NoteCard';
 import PaymentModal from '../components/PaymentModal';
+import PreviewModal from '../components/PreviewModal';
 import { motion, AnimatePresence } from 'motion/react';
 import { Search, Filter, ArrowRight, Sparkles, ShoppingBag, X, Youtube } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -48,6 +49,7 @@ const SAMPLE_NOTES: Note[] = [
 export default function Home({ user }: HomeProps) {
   const [notes, setNotes] = useState<Note[]>([]);
   const [checkoutNotes, setCheckoutNotes] = useState<Note[]>([]);
+  const [previewNote, setPreviewNote] = useState<Note | null>(null);
   const { cart, addToCart, isInCart } = useCart();
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [search, setSearch] = useState('');
@@ -217,6 +219,7 @@ export default function Home({ user }: HomeProps) {
               onBuy={handleBuy} 
               onAddToCart={addToCart}
               isInCart={!!cart.find(n => n.id === note.id)}
+              onPreview={setPreviewNote}
             />
           ))}
         </AnimatePresence>
@@ -392,6 +395,16 @@ export default function Home({ user }: HomeProps) {
           </div>
         </div>
       </div>
+
+      <AnimatePresence>
+        {previewNote && (
+          <PreviewModal
+            note={previewNote}
+            onClose={() => setPreviewNote(null)}
+            onBuy={handleBuy}
+          />
+        )}
+      </AnimatePresence>
 
       <AnimatePresence>
         {checkoutNotes.length > 0 && (

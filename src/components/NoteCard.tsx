@@ -9,11 +9,13 @@ interface NoteCardProps {
   onBuy: (note: Note) => void;
   onAddToCart: (note: Note) => void;
   isInCart: boolean;
+  onPreview: (note: Note) => void;
 }
 
-const NoteCard: React.FC<NoteCardProps> = ({ note, onBuy, onAddToCart, isInCart }) => {
+const NoteCard: React.FC<NoteCardProps> = ({ note, onBuy, onAddToCart, isInCart, onPreview }) => {
   const handleClick = () => {
     logView(note.id);
+    onPreview(note);
   };
 
   return (
@@ -62,6 +64,7 @@ const NoteCard: React.FC<NoteCardProps> = ({ note, onBuy, onAddToCart, isInCart 
             <button
               onClick={(e) => {
                 e.preventDefault();
+                e.stopPropagation();
                 onAddToCart(note);
               }}
               className={`p-2.5 rounded-xl transition-all shadow-lg ${
@@ -77,6 +80,7 @@ const NoteCard: React.FC<NoteCardProps> = ({ note, onBuy, onAddToCart, isInCart 
             <button
               onClick={(e) => {
                 e.preventDefault();
+                e.stopPropagation();
                 onBuy(note);
               }}
               className="flex items-center gap-2 bg-gray-900 dark:bg-blue-600 text-white px-5 py-2.5 rounded-xl font-bold hover:bg-blue-600 dark:hover:bg-blue-700 active:bg-blue-700 transition-all shadow-lg shadow-gray-200 dark:shadow-none"
