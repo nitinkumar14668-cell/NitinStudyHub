@@ -1,9 +1,7 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Youtube, Search, Play, Pause, Volume2, VolumeX, Maximize, ExternalLink, Loader2, Sparkles, ArrowLeft, X, BookOpen, ShoppingBag, ArrowRight } from 'lucide-react';
+import { Youtube, Search, Play, ExternalLink, Loader2, Sparkles, ArrowLeft, X, BookOpen, ShoppingBag, ArrowRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import _ReactPlayer from 'react-player';
-const ReactPlayer = _ReactPlayer as any;
 import { fetchEducationalVideos, YouTubeVideo } from '../services/youtubeService';
 
 const AdModal: React.FC<{ isOpen: boolean; onClose: () => void; videoUrl: string; onWatchLocally: (url: string) => void }> = ({ isOpen, onClose, videoUrl, onWatchLocally }) => {
@@ -74,15 +72,6 @@ const Videos: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('latest educational lectures');
   const [selectedVideoUrl, setSelectedVideoUrl] = useState<string | null>(null);
-  const [playingVideoId, setPlayingVideoId] = useState<string | null>(null);
-  const [playing, setPlaying] = useState(false);
-  const [played, setPlayed] = useState(0);
-  const [duration, setDuration] = useState(0);
-  const [volume, setVolume] = useState(0.8);
-  const [muted, setMuted] = useState(false);
-  const [showControls, setShowControls] = useState(true);
-  const playerRef = useRef<any>(null);
-  const controlsTimeoutRef = useRef<any>(null);
 
   const getVideos = async (query: string) => {
     setLoading(true);
@@ -100,57 +89,6 @@ const Videos: React.FC = () => {
     getVideos(searchQuery);
   };
 
-  const extractVideoId = (url: string) => {
-    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
-    const match = url.match(regExp);
-    return (match && match[2].length === 11) ? match[2] : null;
-  };
-
-  const handleReady = () => {
-    if (playerRef.current && typeof playerRef.current.getDuration === 'function') {
-      setDuration(playerRef.current.getDuration());
-    }
-  };
-
-  const handlePlayPause = () => setPlaying(!playing);
-  const handleToggleMute = () => setMuted(!muted);
-  
-  const handleProgress = (state: any) => {
-    setPlayed(state.played);
-  };
-
-  const handleSeekChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setPlayed(parseFloat(e.target.value));
-  };
-
-  const handleSeekMouseUp = (e: React.MouseEvent<HTMLInputElement> | React.TouchEvent<HTMLInputElement>) => {
-    const val = parseFloat((e.target as HTMLInputElement).value);
-    if (playerRef.current && typeof playerRef.current.seekTo === 'function') {
-      playerRef.current.seekTo(val);
-    }
-  };
-
-  const formatTime = (seconds: number) => {
-    const date = new Date(seconds * 1000);
-    const hh = date.getUTCHours();
-    const mm = date.getUTCMinutes();
-    const ss = date.getUTCSeconds().toString().padStart(2, '0');
-    if (hh) {
-      return `${hh}:${mm.toString().padStart(2, '0')}:${ss}`;
-    }
-    return `${mm}:${ss}`;
-  };
-
-  const handleMouseMove = () => {
-    setShowControls(true);
-    if (controlsTimeoutRef.current) {
-      clearTimeout(controlsTimeoutRef.current);
-    }
-    controlsTimeoutRef.current = setTimeout(() => {
-      if (playing) setShowControls(false);
-    }, 3000);
-  };
-
   return (
     <div className="min-h-screen bg-[#f8f9fa] dark:bg-gray-950 pt-32 pb-20 px-4 sm:px-6 lg:px-8">
       <AdModal 
@@ -158,11 +96,8 @@ const Videos: React.FC = () => {
         onClose={() => setSelectedVideoUrl(null)} 
         videoUrl={selectedVideoUrl || ''}
         onWatchLocally={(url) => {
-          const id = extractVideoId(url);
-          setPlayingVideoId(id);
-          setPlaying(true);
           setSelectedVideoUrl(null);
-          window.scrollTo({ top: 0, behavior: 'smooth' });
+          window.open(url, '_blank');
         }}
       />
 
@@ -180,169 +115,8 @@ const Videos: React.FC = () => {
               Back to Home
             </span>
           </Link>
-
-          {playingVideoId && (
-            <button 
-              onClick={() => {
-                setPlaying(false);
-                setTimeout(() => setPlayingVideoId(null), 100);
-              }}
-              className="text-xs font-black uppercase tracking-widest text-red-600 hover:underline"
-            >
-              Close Player
-            </button>
-          )}
         </div>
 
-        {/* Video Player Section */}
-        <AnimatePresence>
-          {playingVideoId && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              exit={{ opacity: 0, height: 0 }}
-              className="mb-16 overflow-hidden"
-            >
-              <div 
-                className="relative aspect-video rounded-[3rem] overflow-hidden shadow-2xl border-4 border-white dark:border-gray-900 bg-black group/player"
-                onMouseMove={handleMouseMove}
-                onMouseLeave={() => playing && setShowControls(false)}
-              >
-                <ReactPlayer
-                  ref={playerRef}
-                  url={`https://www.youtube.com/watch?v=${playingVideoId}`}
-                  width="100%"
-                  height="100%"
-                  playing={playing}
-                  volume={volume}
-                  muted={muted}
-                  controls={true}
-                  onProgress={handleProgress}
-                  onReady={handleReady}
-                  onPlay={() => setPlaying(true)}
-                  onPause={() => setPlaying(false)}
-                  config={{
-                    youtube: {
-                      playerVars: { 
-                        showinfo: 0, 
-                        rel: 0, 
-                        modestbranding: 1
-                      } 
-                    }
-                  } as any}
-                />
-
-                {/* Custom Controls Overlay */}
-                <motion.div 
-                  initial={false}
-                  animate={{ opacity: showControls ? 1 : 0 }}
-                  className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/20 flex flex-col justify-between p-6 md:p-10 transition-opacity duration-300 pointer-events-none"
-                >
-                  <div className="flex justify-between items-start">
-                    <div className="bg-white/10 backdrop-blur-md px-4 py-2 rounded-2xl border border-white/20">
-                      <p className="text-white text-sm font-bold truncate max-w-md">
-                        Currently Playing Educational Lecture
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="space-y-6 pointer-events-auto">
-                    {/* Progress Bar */}
-                    <div className="relative group/progress">
-                      <input
-                        type="range"
-                        min={0}
-                        max={0.999999}
-                        step="any"
-                        value={played}
-                        onChange={handleSeekChange}
-                        onMouseUp={handleSeekMouseUp}
-                        onTouchEnd={handleSeekMouseUp}
-                        className="w-full h-1.5 bg-white/20 rounded-full appearance-none cursor-pointer accent-red-600 transition-all hover:h-2"
-                        style={{
-                          background: `linear-gradient(to right, #dc2626 0%, #dc2626 ${played * 100}%, rgba(255, 255, 255, 0.2) ${played * 100}%, rgba(255, 255, 255, 0.2) 100%)`
-                        }}
-                      />
-                    </div>
-
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-6">
-                        <button 
-                          onClick={handlePlayPause}
-                          className="w-12 h-12 bg-white text-black rounded-full flex items-center justify-center hover:scale-110 transition-transform"
-                        >
-                          {playing ? <Pause className="w-6 h-6 fill-current" /> : <Play className="w-6 h-6 fill-current translate-x-0.5" />}
-                        </button>
-
-                        <div className="flex items-center gap-4">
-                          <button onClick={handleToggleMute} className="text-white hover:text-red-500 transition-colors">
-                            {muted || volume === 0 ? <VolumeX className="w-6 h-6" /> : <Volume2 className="w-6 h-6" />}
-                          </button>
-                          <input 
-                            type="range" 
-                            min={0} 
-                            max={1} 
-                            step="any" 
-                            value={volume} 
-                            onChange={(e) => setVolume(parseFloat(e.target.value))}
-                            className="w-20 md:w-32 h-1 bg-white/20 rounded-full appearance-none cursor-pointer accent-white"
-                          />
-                        </div>
-
-                        <div className="text-white text-sm font-black tracking-widest hidden md:block">
-                          {formatTime(played * duration)} / {formatTime(duration)}
-                        </div>
-                      </div>
-
-                      <div className="flex items-center gap-4">
-                        <button 
-                          onClick={() => {
-                            if (!playerRef.current) return;
-                            
-                            // Try multiple ways to get to fullscreen
-                            const internalPlayer = typeof playerRef.current.getInternalPlayer === 'function' 
-                              ? playerRef.current.getInternalPlayer() 
-                              : null;
-                            
-                            const wrapper = playerRef.current.wrapper;
-                            const element = internalPlayer?.getIframe?.() || internalPlayer || wrapper;
-
-                            if (element && element.requestFullscreen) {
-                              element.requestFullscreen();
-                            } else if (element && (element as any).webkitRequestFullscreen) {
-                              (element as any).webkitRequestFullscreen();
-                            } else if (wrapper && wrapper.requestFullscreen) {
-                              wrapper.requestFullscreen();
-                            }
-                          }}
-                          className="text-white hover:text-red-500 transition-colors"
-                        >
-                          <Maximize className="w-6 h-6" />
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </motion.div>
-                
-                {/* Center Play Button (only when paused) */}
-                <AnimatePresence>
-                  {!playing && (
-                    <motion.div 
-                      initial={{ opacity: 0, scale: 0.8 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      exit={{ opacity: 0, scale: 0.8 }}
-                      className="absolute inset-0 flex items-center justify-center pointer-events-none"
-                    >
-                      <div className="w-24 h-24 bg-red-600 text-white rounded-full flex items-center justify-center shadow-2xl">
-                         <Play className="w-12 h-12 fill-current translate-x-1" />
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
         <div className="text-center mb-16">
           <motion.div 
             initial={{ opacity: 0, y: 20 }}
