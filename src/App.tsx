@@ -25,35 +25,39 @@ export default function App() {
     return () => unsubscribe();
   }, []);
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-[#f5f5f5]">
-        <motion.div
-          animate={{ scale: [1, 1.1, 1] }}
-          transition={{ repeat: Infinity, duration: 1.5 }}
-          className="text-2xl font-sans font-medium text-gray-500"
-        >
-          NitinStudyHub
-        </motion.div>
-      </div>
-    );
-  }
-
   return (
     <ThemeProvider>
       <CartProvider>
         <Router>
-          <div className="min-h-screen bg-[#f8f9fa] dark:bg-gray-950 font-sans text-gray-900 dark:text-gray-100 transition-colors duration-300 flex flex-col">
+          <div className="min-h-screen w-full overflow-x-hidden bg-[#f8f9fa] dark:bg-gray-950 font-sans text-gray-900 dark:text-gray-100 transition-colors duration-300 flex flex-col">
             <Toaster position="top-center" />
             <Navbar user={user} />
             <main className="flex-grow">
               <AnimatePresence mode="wait">
-                <Routes>
-                  <Route path="/" element={<Home user={user} />} />
-                  <Route path="/download/:transactionId" element={<Download user={user} />} />
-                  <Route path="/admin" element={<Admin user={user} />} />
-                  <Route path="/purchases" element={<Purchases user={user} />} />
-                </Routes>
+                {loading ? (
+                  <motion.div
+                    key="loading"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="flex-grow flex items-center justify-center p-20"
+                  >
+                    <motion.div
+                      animate={{ scale: [1, 1.1, 1] }}
+                      transition={{ repeat: Infinity, duration: 1.5 }}
+                      className="text-3xl font-black text-blue-600 dark:text-blue-400"
+                    >
+                      NitinStudyHub
+                    </motion.div>
+                  </motion.div>
+                ) : (
+                  <Routes>
+                    <Route path="/" element={<Home user={user} />} />
+                    <Route path="/download/:transactionId" element={<Download user={user} />} />
+                    <Route path="/admin" element={<Admin user={user} />} />
+                    <Route path="/purchases" element={<Purchases user={user} />} />
+                  </Routes>
+                )}
               </AnimatePresence>
             </main>
             <Footer />

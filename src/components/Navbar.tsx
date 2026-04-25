@@ -45,7 +45,7 @@ export default function Navbar({ user }: NavbarProps) {
   };
 
   return (
-    <nav className="sticky top-0 z-50 bg-white/80 dark:bg-gray-950/80 backdrop-blur-md border-b border-gray-200 dark:border-gray-800 transition-colors">
+    <nav className="sticky top-0 z-50 w-full bg-white/80 dark:bg-gray-950/80 backdrop-blur-md border-b border-gray-200 dark:border-gray-800 transition-colors">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16 items-center">
           <Link to="/" className="flex items-center gap-2">
@@ -55,31 +55,31 @@ export default function Navbar({ user }: NavbarProps) {
             </span>
           </Link>
 
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-1.5 sm:gap-4">
             <button
               onClick={toggleTheme}
-              className="p-2 text-gray-500 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+              className="p-1.5 sm:p-2 text-gray-500 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
               title={theme === 'light' ? 'Switch to Dark Mode' : 'Switch to Light Mode'}
             >
               {theme === 'light' ? <Moon className="w-5 h-5" /> : <Sun className="w-5 h-5" />}
             </button>
 
             {user && (
-              <div className="flex items-center gap-4">
+              <div className="flex items-center gap-1.5 sm:gap-4">
                 <Link
                   to="/purchases"
-                  className={`flex items-center gap-2 text-sm font-bold transition-all ${
+                  className={`flex items-center gap-1.5 text-sm font-bold transition-all ${
                     location.pathname === '/purchases' ? 'text-blue-600' : 'text-gray-500 hover:text-gray-900 dark:hover:text-white'
                   }`}
                 >
                   <ShoppingBag className="w-4 h-4" />
-                  <span className="hidden sm:inline">My Purchases</span>
+                  <span className="hidden md:inline">My Purchases</span>
                 </Link>
 
                 {cart.length > 0 && (
                   <div className="relative group">
                     <ShoppingBag className="w-5 h-5 text-blue-600 animate-pulse" />
-                    <span className="absolute -top-2 -right-2 bg-red-500 text-white text-[8px] font-black w-4 h-4 rounded-full flex items-center justify-center border-2 border-white dark:border-gray-950">
+                    <span className="absolute -top-1.5 -right-1.5 bg-red-500 text-white text-[8px] font-black w-3.5 h-3.5 rounded-full flex items-center justify-center border border-white dark:border-gray-950">
                       {cart.length}
                     </span>
                   </div>
@@ -90,30 +90,30 @@ export default function Navbar({ user }: NavbarProps) {
             {isAdmin && (
               <Link
                 to="/admin"
-                className={`flex items-center gap-2 text-sm font-bold transition-all ${
+                className={`flex items-center gap-1.5 text-sm font-bold transition-all ${
                   location.pathname === '/admin' ? 'text-blue-600' : 'text-gray-500 hover:text-gray-900 dark:hover:text-white'
                 }`}
               >
                 <LayoutDashboard className="w-4 h-4" />
-                <span className="hidden sm:inline">Admin</span>
+                <span className="hidden md:inline">Admin</span>
               </Link>
             )}
 
-            <div className="h-6 w-px bg-gray-200 dark:bg-gray-800 mx-2" />
+            <div className="h-6 w-px bg-gray-200 dark:bg-gray-800 mx-1" />
 
             {user ? (
-              <div className="flex items-center gap-3">
-                <div className="hidden sm:block text-right">
-                  <p className="text-xs font-bold text-gray-900 dark:text-white truncate max-w-[100px]">{user.displayName}</p>
+              <div className="flex items-center gap-2 sm:gap-3">
+                <div className="hidden lg:block text-right">
+                  <p className="text-[10px] sm:text-xs font-bold text-gray-900 dark:text-white truncate max-w-[80px]">{user.displayName}</p>
                 </div>
                 <img
                   src={user.photoURL || ''}
                   alt={user.displayName || ''}
-                  className="w-8 h-8 rounded-full border border-gray-200 dark:border-gray-800"
+                  className="w-7 h-7 sm:w-8 sm:h-8 rounded-full border border-gray-200 dark:border-gray-800"
                 />
                 <button
                   onClick={handleLogout}
-                  className="p-2 text-gray-500 hover:text-red-600 transition-colors"
+                  className="p-1.5 sm:p-2 text-gray-500 hover:text-red-600 transition-colors"
                   title="Logout"
                 >
                   <LogOut className="w-4 h-4" />
@@ -123,7 +123,7 @@ export default function Navbar({ user }: NavbarProps) {
               <button
                 disabled={isLoggingIn}
                 onClick={handleLogin}
-                className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors shadow-sm disabled:opacity-50"
+                className="flex items-center gap-2 bg-blue-600 text-white px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-sm sm:text-base font-medium hover:bg-blue-700 transition-colors shadow-sm disabled:opacity-50"
               >
                 {isLoggingIn ? (
                   <Loader2 className="w-4 h-4 animate-spin" />

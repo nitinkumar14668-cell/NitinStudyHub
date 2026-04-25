@@ -8,7 +8,16 @@
 }
 
 @layer base {
+  html {
+    @apply scroll-smooth bg-[#f8f9fa] transition-colors duration-300 text-[14px] sm:text-[16px];
+  }
+  html.dark {
+    @apply bg-gray-950;
+  }
   body {
-    @apply antialiased;
+    @apply antialiased text-gray-900 overflow-x-hidden w-full max-w-full;
+  }
+  .dark body {
+    @apply text-gray-100;
   }
 }
