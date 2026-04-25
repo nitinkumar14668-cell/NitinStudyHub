@@ -2,8 +2,8 @@ import React, { useEffect, useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Youtube, Search, Play, Pause, Volume2, VolumeX, Maximize, ExternalLink, Loader2, Sparkles, ArrowLeft, X, BookOpen, ShoppingBag, ArrowRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import _ReactPlayer from 'react-player';
-const ReactPlayer = _ReactPlayer as any;
+import ReactPlayer from 'react-player';
+const Player = ReactPlayer as any;
 import { fetchEducationalVideos, YouTubeVideo } from '../services/youtubeService';
 
 const AdModal: React.FC<{ isOpen: boolean; onClose: () => void; videoUrl: string; onWatchLocally: (url: string) => void }> = ({ isOpen, onClose, videoUrl, onWatchLocally }) => {
@@ -106,15 +106,17 @@ const Videos: React.FC = () => {
     return (match && match[2].length === 11) ? match[2] : null;
   };
 
+  const handleReady = () => {
+    if (playerRef.current) {
+      setDuration(playerRef.current.getDuration());
+    }
+  };
+
   const handlePlayPause = () => setPlaying(!playing);
   const handleToggleMute = () => setMuted(!muted);
   
   const handleProgress = (state: any) => {
     setPlayed(state.played);
-  };
-
-  const handleDuration = (duration: number) => {
-    setDuration(duration);
   };
 
   const handleSeekChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -199,7 +201,7 @@ const Videos: React.FC = () => {
                 onMouseMove={handleMouseMove}
                 onMouseLeave={() => playing && setShowControls(false)}
               >
-                <ReactPlayer
+                <Player
                   ref={playerRef}
                   url={`https://www.youtube.com/watch?v=${playingVideoId}`}
                   width="100%"
@@ -208,7 +210,7 @@ const Videos: React.FC = () => {
                   volume={volume}
                   muted={muted}
                   onProgress={handleProgress}
-                  onDuration={handleDuration}
+                  onReady={handleReady}
                   config={{
                     youtube: {
                       embedOptions: { 
