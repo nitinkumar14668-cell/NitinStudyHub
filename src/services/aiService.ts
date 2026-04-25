@@ -1,0 +1,53 @@
+import { GoogleGenAI } from "@google/genai";
+
+const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || '' });
+
+export const generateNotePromotion = async (noteTitle: string, description: string, category: string) => {
+  try {
+    const prompt = `
+      You are a social media marketing expert for an educational platform.
+      Create a compelling YouTube Community Post or Short description for the following set of notes:
+      Title: ${noteTitle}
+      Description: ${description}
+      Category: ${category}
+
+      The tone should be: Exciting, helpful, and student-focused.
+      Include:
+      1. A catchy headline.
+      2. 3 key benefits of these notes.
+      3. Call to action.
+      4. 5-7 relevant hashtags (include #NitinStudyHub).
+      5. Emoticons.
+
+      Return the response in JSON format.
+      Example JSON:
+      {
+        "postTitle": "Catchy headline here",
+        "description": "Full promotional text here",
+        "tags": ["tag1", "tag2", "tag3"]
+      }
+    `;
+
+    const response = await ai.models.generateContent({
+      model: "gemini-3-flash-preview",
+      contents: prompt,
+    });
+
+    const text = response.text || '';
+    
+    // Extract JSON from the response
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      return JSON.parse(jsonMatch[0]);
+    }
+    
+    return {
+      postTitle: `Check out our new ${noteTitle} notes!`,
+      description: `New study resource available for ${category}: ${description}`,
+      tags: ["education", "study", "notes", "NitinStudyHub"]
+    };
+  } catch (error) {
+    console.error("AI Generation Error:", error);
+    return null;
+  }
+};

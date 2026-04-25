@@ -2,11 +2,13 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { User } from 'firebase/auth';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
-import { Upload, FileText, CheckCircle2, Loader2, Plus, Trash2, ArrowLeft, Clock, Check, X as CloseIcon, Eye, DollarSign, Pencil } from 'lucide-react';
+import { Upload, FileText, CheckCircle2, Loader2, Plus, Trash2, ArrowLeft, Clock, Check, X as CloseIcon, Eye, DollarSign, Pencil, Youtube, Sparkles } from 'lucide-react';
 import { db, storage } from '../lib/firebase';
 import { collection, addDoc, getDocs, deleteDoc, doc, serverTimestamp, updateDoc, query, orderBy, limit, increment } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { Note, Transaction, TransactionStatus, ViewEvent } from '../types';
+import { extractFirstPageAsImage } from '../lib/pdfHelper';
+import { generateNotePromotion } from '../services/aiService';
 import toast from 'react-hot-toast';
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, 
@@ -21,7 +23,7 @@ export default function Admin({ user }: AdminProps) {
   const navigate = useNavigate();
   const [notes, setNotes] = useState<Note[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'notes' | 'transactions'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'notes' | 'transactions' | 'social'>('dashboard');
   const [views, setViews] = useState<ViewEvent[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const [pdfFile, setPdfFile] = useState<File | null>(null);
@@ -37,6 +39,8 @@ export default function Admin({ user }: AdminProps) {
   const [isCustomCategory, setIsCustomCategory] = useState(false);
   const [customCategory, setCustomCategory] = useState('');
   const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
+  const [socialDrafts, setSocialDrafts] = useState<any[]>([]);
+  const [isGeneratingSocial, setIsGeneratingSocial] = useState(false);
 
   const isAdmin = user?.email === 'nitinkumar14668@gmail.com';
 
@@ -220,6 +224,37 @@ export default function Admin({ user }: AdminProps) {
     setThumbFile(null);
   };
 
+  const generateSocialPost = async (note: Note) => {
+    setIsGeneratingSocial(true);
+    try {
+      // 1. Generate AI Content
+      const promo = await generateNotePromotion(note.title, note.description, note.category);
+      
+      // 2. Extract PDF image (first page)
+      const previewImage = await extractFirstPageAsImage(note.pdfUrl);
+
+      if (promo && previewImage) {
+        const newDraft = {
+          id: note.id,
+          title: note.title,
+          aiContent: promo,
+          image: previewImage,
+          scheduledFor: new Date(Date.now() + 6 * 60 * 60 * 1000).toLocaleString(),
+          status: 'Ready'
+        };
+        setSocialDrafts(prev => [newDraft, ...prev]);
+        toast.success(`AI Post generated for ${note.title}!`);
+      } else {
+        toast.error("Could not generate AI content or extract PDF page.");
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Social Generation failed.");
+    } finally {
+      setIsGeneratingSocial(false);
+    }
+  };
+
   const dashboardStats = useMemo(() => {
     const approvedTrans = transactions.filter(t => t.status === TransactionStatus.APPROVED);
     const totalEarnings = approvedTrans.reduce((sum, t) => sum + t.amount, 0);
@@ -317,6 +352,14 @@ export default function Admin({ user }: AdminProps) {
             }`}
           >
             Manage Notes
+          </button>
+          <button
+            onClick={() => setActiveTab('social')}
+            className={`px-6 py-2.5 rounded-xl text-sm font-bold transition-all ${
+              activeTab === 'social' ? 'bg-white dark:bg-gray-700 text-blue-600 dark:text-blue-400 shadow-sm' : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+            }`}
+          >
+            Social Hub
           </button>
         </div>
       </div>
@@ -457,6 +500,142 @@ export default function Admin({ user }: AdminProps) {
                      })}
                    </tbody>
                  </table>
+               </div>
+            </div>
+          </motion.div>
+        ) : activeTab === 'social' ? (
+          <motion.div
+            key="social"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            className="space-y-12"
+          >
+            {/* Social Hub Intro */}
+            <div className="bg-gray-900 rounded-[3rem] p-12 text-white relative overflow-hidden">
+               <div className="absolute top-0 right-0 w-1/2 h-full bg-red-600/20 blur-[120px]" />
+               <div className="relative flex flex-col md:flex-row items-center justify-between gap-10">
+                  <div className="max-w-xl text-center md:text-left">
+                     <div className="inline-flex items-center gap-2 bg-red-600 px-3 py-1 rounded-full text-[10px] font-black uppercase mb-4">
+                        <Sparkles className="w-3 h-3" /> AI Social Automation
+                     </div>
+                     <h2 className="text-4xl font-black mb-4">Auto-Post to YouTube</h2>
+                     <p className="text-gray-400 font-medium leading-relaxed">
+                        Generate high-engagement social media posts for your notes. 
+                        AI will extract a page from your PDF, write a professional caption, and prepare it for YouTube Community & Shorts.
+                     </p>
+                  </div>
+                  <div className="bg-white/10 backdrop-blur-xl p-8 rounded-[2rem] border border-white/20 text-center">
+                     <p className="text-xs font-black text-gray-400 uppercase tracking-widest mb-2">Social Drafts</p>
+                     <h3 className="text-5xl font-black">{socialDrafts.length}</h3>
+                  </div>
+               </div>
+            </div>
+
+            <div className="grid lg:grid-cols-12 gap-10">
+               {/* Note Selection */}
+               <div className="lg:col-span-4 space-y-6">
+                  <h3 className="text-xl font-black dark:text-white px-2">1. Select Note to Promote</h3>
+                  <div className="space-y-3 max-h-[600px] overflow-y-auto pr-2 custom-scrollbar">
+                     {notes.map(note => (
+                        <div key={note.id} className="bg-white dark:bg-gray-900 p-4 rounded-3xl border border-gray-100 dark:border-gray-800 flex items-center justify-between group hover:shadow-lg transition-all">
+                           <div className="flex items-center gap-3">
+                              <img src={note.thumbnailUrl} className="w-12 h-12 rounded-xl object-cover" />
+                              <div>
+                                 <h4 className="font-bold text-sm text-gray-900 dark:text-white line-clamp-1">{note.title}</h4>
+                                 <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest">{note.category}</p>
+                              </div>
+                           </div>
+                           <button 
+                              disabled={isGeneratingSocial}
+                              onClick={() => generateSocialPost(note)}
+                              className="p-2.5 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 rounded-xl hover:bg-blue-600 hover:text-white transition-all disabled:opacity-50"
+                           >
+                              {isGeneratingSocial ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+                           </button>
+                        </div>
+                     ))}
+                  </div>
+               </div>
+
+               {/* Drafts Feed */}
+               <div className="lg:col-span-8 space-y-6">
+                  <h3 className="text-xl font-black dark:text-white px-2">2. AI Generated Post Drafts</h3>
+                  {socialDrafts.length === 0 ? (
+                    <div className="bg-white dark:bg-gray-900 p-20 rounded-[3rem] border border-dashed border-gray-200 dark:border-gray-800 flex flex-col items-center justify-center text-center">
+                       <Youtube className="w-16 h-16 text-gray-100 dark:text-gray-800 mb-6" />
+                       <h4 className="text-xl font-bold text-gray-400 mb-2">No drafts generated yet.</h4>
+                       <p className="text-sm text-gray-500 max-w-xs">Click the sparkles icon on any note to have AI generate a YouTube blast for it.</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-8">
+                       {socialDrafts.map((draft, idx) => (
+                          <motion.div 
+                             key={draft.id + idx}
+                             initial={{ opacity: 0, x: 20 }}
+                             animate={{ opacity: 1, x: 0 }}
+                             className="bg-white dark:bg-gray-900 rounded-[3rem] border border-gray-100 dark:border-gray-800 overflow-hidden shadow-sm"
+                          >
+                             <div className="flex flex-col xl:flex-row divide-y xl:divide-y-0 xl:divide-x divide-gray-100 dark:divide-gray-800">
+                                {/* Preview Image (Extracted PDF Page) */}
+                                <div className="xl:w-1/3 bg-gray-50 dark:bg-gray-950 p-6 flex flex-col">
+                                   <p className="text-[10px] font-black uppercase text-gray-400 mb-4 tracking-widest">Extracted PDF Preview</p>
+                                   <div className="relative aspect-[3/4] mb-4 shadow-2xl rounded-2xl overflow-hidden border border-gray-100 dark:border-gray-800">
+                                      <img src={draft.image} className="w-full h-full object-contain" />
+                                      <div className="absolute inset-0 bg-blue-600/5" />
+                                   </div>
+                                   <button className="mt-auto w-full py-3 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 text-xs font-bold rounded-xl text-gray-600 dark:text-gray-300 hover:bg-gray-50 transition-colors">
+                                      Download Post Image
+                                   </button>
+                                </div>
+
+                                {/* Content Details */}
+                                <div className="xl:w-2/3 p-8">
+                                   <div className="flex items-center justify-between mb-8">
+                                      <div>
+                                         <h4 className="text-2xl font-black text-gray-900 dark:text-white mb-1">{draft.aiContent.postTitle}</h4>
+                                         <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Post for: {draft.title}</p>
+                                      </div>
+                                      <div className="text-right">
+                                         <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Schedule</p>
+                                         <p className="text-xs font-bold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-600/10 px-3 py-1 rounded-full">+6 hrs Repost</p>
+                                      </div>
+                                   </div>
+
+                                   <div className="bg-gray-50 dark:bg-gray-950/50 p-6 rounded-2xl border border-gray-100 dark:border-gray-800 mb-6">
+                                      <p className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap leading-relaxed font-medium">
+                                         {draft.aiContent.description}
+                                      </p>
+                                   </div>
+
+                                   <div className="flex flex-wrap gap-2 mb-8">
+                                      {draft.aiContent.tags.map((tag: any) => (
+                                         <span key={tag} className="text-[10px] font-black text-gray-400 dark:text-gray-500 bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded-md">
+                                            #{tag}
+                                         </span>
+                                      ))}
+                                   </div>
+
+                                   <div className="flex items-center gap-4">
+                                      <button 
+                                        onClick={() => window.open('https://youtube.com/create', '_blank')}
+                                        className="flex-grow py-4 bg-red-600 text-white rounded-2xl font-black shadow-lg shadow-red-200 dark:shadow-none hover:bg-red-700 flex items-center justify-center gap-2"
+                                      >
+                                         <Youtube className="w-5 h-5" /> Push to YouTube
+                                      </button>
+                                      <button 
+                                        onClick={() => setSocialDrafts(prev => prev.filter(d => d.id !== draft.id))}
+                                        className="p-4 bg-gray-100 dark:bg-gray-800 text-gray-400 rounded-2xl hover:text-red-500 transition-colors"
+                                      >
+                                         <Trash2 className="w-5 h-5" />
+                                      </button>
+                                   </div>
+                                </div>
+                             </div>
+                          </motion.div>
+                       ))}
+                    </div>
+                  )}
                </div>
             </div>
           </motion.div>

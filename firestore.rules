@@ -21,6 +21,7 @@ service cloud.firestore {
              data.price is number && data.price >= 0 &&
              data.pdfUrl is string && data.pdfUrl.size() <= 1000 &&
              (!('soldCount' in data) || data.soldCount is number) &&
+             (!('viewCount' in data) || data.viewCount is number) &&
              (!('tags' in data) || data.tags is list);
     }
 
@@ -38,7 +39,15 @@ service cloud.firestore {
     // Notes Collection
     match /notes/{noteId} {
       allow read: if true; // Public catalog
-      allow create, update, delete: if isAdmin() && isValidNote(incoming());
+      allow create, delete: if isAdmin() && isValidNote(incoming());
+      allow update: if (isAdmin() && isValidNote(incoming())) ||
+                     (incoming().diff(existing()).affectedKeys().hasOnly(['viewCount']));
+    }
+
+    // Views Collection
+    match /views/{viewId} {
+      allow create: if true;
+      allow read: if isAdmin();
     }
 
     // Transactions Collection

@@ -5,6 +5,7 @@ import { db, loginWithGoogle } from '../lib/firebase';
 import { collection, getDocs } from 'firebase/firestore';
 import NoteCard from '../components/NoteCard';
 import PaymentModal from '../components/PaymentModal';
+import YouTubeSection from '../components/YouTubeSection';
 import { motion, AnimatePresence } from 'motion/react';
 import { Search, Filter, ArrowRight, Sparkles, ShoppingBag, X } from 'lucide-react';
 import toast from 'react-hot-toast';
