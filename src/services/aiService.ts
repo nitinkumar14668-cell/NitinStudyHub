@@ -1,6 +1,7 @@
 import { GoogleGenAI } from "@google/genai";
 
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || '' });
+const apiKey = typeof process !== 'undefined' && process.env ? process.env.GEMINI_API_KEY : import.meta.env.VITE_GEMINI_API_KEY;
+const ai = new GoogleGenAI({ apiKey: apiKey || '' });
 
 export const verifyPaymentScreenshot = async (base64Image: string, mimeType: string, expectedAmount: number) => {
   try {
@@ -33,21 +34,39 @@ export const verifyPaymentScreenshot = async (base64Image: string, mimeType: str
 
     const response = await ai.models.generateContent({
       model: "gemini-3-flash-preview",
-      contents: [prompt, imagePart],
+      contents: { parts: [{ text: prompt }, imagePart] },
+      config: {
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: "OBJECT",
+          properties: {
+            isValid: {
+              type: "BOOLEAN",
+              description: "Whether the payment screenshot is valid and successful"
+            },
+            amount: {
+              type: "NUMBER",
+              description: "The extracted amount"
+            },
+            transactionId: {
+              type: "STRING",
+              description: "The extracted transaction ID"
+            },
+            reason: {
+              type: "STRING",
+              description: "Reason for validation result"
+            }
+          },
+          required: ["isValid", "amount", "transactionId", "reason"]
+        }
+      }
     });
 
     const text = response.text || '';
-    
-    // Extract JSON from the response
-    const jsonMatch = text.match(/\{[\s\S]*\}/);
-    if (jsonMatch) {
-      return JSON.parse(jsonMatch[0]);
-    }
-    
-    return { isValid: false, reason: "Could not parse verification result." };
+    return JSON.parse(text);
   } catch (error) {
     console.error("AI Payment Verification Error:", error);
-    return { isValid: false, reason: "Verification service error." };
+    return { isValid: false, reason: "Verification service error: " + (error instanceof Error ? error.message : "Unknown error") };
   }
 };
 export const generateNotePromotion = async (noteTitle: string, description: string, category: string) => {
