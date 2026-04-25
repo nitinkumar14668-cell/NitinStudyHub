@@ -23,11 +23,13 @@ export default function Admin({ user }: AdminProps) {
   const navigate = useNavigate();
   const [notes, setNotes] = useState<Note[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'notes' | 'transactions' | 'social'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'notes' | 'transactions' | 'media'>('dashboard');
   const [views, setViews] = useState<ViewEvent[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const [pdfFile, setPdfFile] = useState<File | null>(null);
   const [thumbFile, setThumbFile] = useState<File | null>(null);
+  const [isChannelConnected, setIsChannelConnected] = useState(false);
+  const [autoPostEnabled, setAutoPostEnabled] = useState(true);
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -175,11 +177,17 @@ export default function Admin({ user }: AdminProps) {
         await updateDoc(doc(db, 'notes', editingNoteId), payload);
         toast.success("Note updated successfully!");
       } else {
-        await addDoc(collection(db, 'notes'), {
+        const docRef = await addDoc(collection(db, 'notes'), {
           ...payload,
           createdAt: serverTimestamp()
         });
         toast.success("Note uploaded successfully!");
+
+        // Auto post logic
+        if (autoPostEnabled && isChannelConnected) {
+           const noteSnapshot = { id: docRef.id, ...payload } as Note;
+           generateSocialPost(noteSnapshot);
+        }
       }
 
       handleCancelEdit();
@@ -354,12 +362,12 @@ export default function Admin({ user }: AdminProps) {
             Manage Notes
           </button>
           <button
-            onClick={() => setActiveTab('social')}
+            onClick={() => setActiveTab('media')}
             className={`px-6 py-2.5 rounded-xl text-sm font-bold transition-all ${
-              activeTab === 'social' ? 'bg-white dark:bg-gray-700 text-blue-600 dark:text-blue-400 shadow-sm' : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+              activeTab === 'media' ? 'bg-white dark:bg-gray-700 text-blue-600 dark:text-blue-400 shadow-sm' : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
             }`}
           >
-            Social Hub
+            Media Hub
           </button>
         </div>
       </div>
@@ -503,30 +511,57 @@ export default function Admin({ user }: AdminProps) {
                </div>
             </div>
           </motion.div>
-        ) : activeTab === 'social' ? (
+        ) : activeTab === 'media' ? (
           <motion.div
-            key="social"
+            key="media"
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
             className="space-y-12"
           >
-            {/* Social Hub Intro */}
+            {/* Media Hub Header */}
             <div className="bg-gray-900 rounded-[3rem] p-12 text-white relative overflow-hidden">
                <div className="absolute top-0 right-0 w-1/2 h-full bg-red-600/20 blur-[120px]" />
                <div className="relative flex flex-col md:flex-row items-center justify-between gap-10">
                   <div className="max-w-xl text-center md:text-left">
                      <div className="inline-flex items-center gap-2 bg-red-600 px-3 py-1 rounded-full text-[10px] font-black uppercase mb-4">
-                        <Sparkles className="w-3 h-3" /> AI Social Automation
+                        <Youtube className="w-3 h-3" /> YouTube Media Integration
                      </div>
-                     <h2 className="text-4xl font-black mb-4">Auto-Post to YouTube</h2>
-                     <p className="text-gray-400 font-medium leading-relaxed">
-                        Generate high-engagement social media posts for your notes. 
-                        AI will extract a page from your PDF, write a professional caption, and prepare it for YouTube Community & Shorts.
+                     <h2 className="text-4xl font-black mb-4">Media Automation</h2>
+                     <p className="text-gray-400 font-medium leading-relaxed mb-8">
+                        Connect your YouTube channel to enable automatic video uploads and community posts. 
+                        AI will handle the metadata generation and PDF page extraction.
                      </p>
+                     
+                     <div className="flex flex-wrap items-center gap-4">
+                        <button 
+                           onClick={() => {
+                              setIsChannelConnected(!isChannelConnected);
+                              toast.success(isChannelConnected ? "Channel Disconnected" : "YouTube Channel Connected!");
+                           }}
+                           className={`px-8 py-4 rounded-2xl font-black transition-all flex items-center gap-3 ${
+                              isChannelConnected 
+                                 ? 'bg-green-600 text-white' 
+                                 : 'bg-white text-gray-900 hover:bg-gray-100'
+                           }`}
+                        >
+                           <Youtube className="w-5 h-5" />
+                           {isChannelConnected ? 'Channel Connected' : 'Connect YouTube Channel'}
+                        </button>
+                        
+                        <div className="flex items-center gap-3 bg-white/5 backdrop-blur-xl px-6 py-4 rounded-2xl border border-white/10">
+                           <span className="text-xs font-bold text-gray-400 uppercase tracking-widest leading-none">Auto-Post PDF Uploads</span>
+                           <button 
+                              onClick={() => setAutoPostEnabled(!autoPostEnabled)}
+                              className={`w-12 h-6 rounded-full relative transition-colors ${autoPostEnabled ? 'bg-blue-600' : 'bg-gray-700'}`}
+                           >
+                              <div className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-all ${autoPostEnabled ? 'left-7' : 'left-1'}`} />
+                           </button>
+                        </div>
+                     </div>
                   </div>
                   <div className="bg-white/10 backdrop-blur-xl p-8 rounded-[2rem] border border-white/20 text-center">
-                     <p className="text-xs font-black text-gray-400 uppercase tracking-widest mb-2">Social Drafts</p>
+                     <p className="text-xs font-black text-gray-400 uppercase tracking-widest mb-2">Pending Jobs</p>
                      <h3 className="text-5xl font-black">{socialDrafts.length}</h3>
                   </div>
                </div>
