@@ -285,11 +285,22 @@ const Videos: React.FC = () => {
                       <div className="flex items-center gap-4">
                         <button 
                           onClick={() => {
-                            const entry = playerRef.current?.getInternalPlayer();
-                            if (entry && entry.requestFullscreen) {
-                              entry.requestFullscreen();
-                            } else if (playerRef.current?.wrapper?.requestFullscreen) {
-                              playerRef.current.wrapper.requestFullscreen();
+                            if (!playerRef.current) return;
+                            
+                            // Try multiple ways to get to fullscreen
+                            const internalPlayer = typeof playerRef.current.getInternalPlayer === 'function' 
+                              ? playerRef.current.getInternalPlayer() 
+                              : null;
+                            
+                            const wrapper = playerRef.current.wrapper;
+                            const element = internalPlayer?.getIframe?.() || internalPlayer || wrapper;
+
+                            if (element && element.requestFullscreen) {
+                              element.requestFullscreen();
+                            } else if (element && (element as any).webkitRequestFullscreen) {
+                              (element as any).webkitRequestFullscreen();
+                            } else if (wrapper && wrapper.requestFullscreen) {
+                              wrapper.requestFullscreen();
                             }
                           }}
                           className="text-white hover:text-red-500 transition-colors"
