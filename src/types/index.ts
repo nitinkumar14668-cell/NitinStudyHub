@@ -15,6 +15,13 @@ export interface Note {
   category: string;
   tags?: string[];
   soldCount?: number;
+  viewCount?: number;
+}
+
+export interface ViewEvent {
+  id: string;
+  noteId: string;
+  timestamp: any;
 }
 
 export interface Transaction {

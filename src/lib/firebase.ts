@@ -1,6 +1,6 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
-import { initializeFirestore, doc, getDocFromServer } from 'firebase/firestore';
+import { initializeFirestore, doc, getDocFromServer, collection, addDoc, serverTimestamp, increment, updateDoc } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
 import firebaseConfig from '../../firebase-applet-config.json';
 
@@ -35,5 +35,22 @@ export const loginWithGoogle = async () => {
       alert(`Login failed: ${error.message} (${error.code})`);
     }
     throw error;
+  }
+};
+
+export const logView = async (noteId: string) => {
+  try {
+    // 1. Log event in views collection
+    await addDoc(collection(db, 'views'), {
+      noteId,
+      timestamp: serverTimestamp()
+    });
+
+    // 2. Increment counter on the note itself
+    await updateDoc(doc(db, 'notes', noteId), {
+      viewCount: increment(1)
+    });
+  } catch (err) {
+    console.error("Error logging view:", err);
   }
 };

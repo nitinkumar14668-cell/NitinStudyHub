@@ -1,13 +1,17 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { User } from 'firebase/auth';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import { Upload, FileText, CheckCircle2, Loader2, Plus, Trash2, ArrowLeft, Clock, Check, X as CloseIcon, Eye, DollarSign, Pencil } from 'lucide-react';
 import { db, storage } from '../lib/firebase';
-import { collection, addDoc, getDocs, deleteDoc, doc, serverTimestamp, updateDoc, query, orderBy, limit } from 'firebase/firestore';
+import { collection, addDoc, getDocs, deleteDoc, doc, serverTimestamp, updateDoc, query, orderBy, limit, increment } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { Note, Transaction, TransactionStatus } from '../types';
+import { Note, Transaction, TransactionStatus, ViewEvent } from '../types';
 import toast from 'react-hot-toast';
+import { 
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, 
+  LineChart, Line, AreaChart, Area, Cell, PieChart, Pie
+} from 'recharts';
 
 interface AdminProps {
   user: User | null;
@@ -17,7 +21,8 @@ export default function Admin({ user }: AdminProps) {
   const navigate = useNavigate();
   const [notes, setNotes] = useState<Note[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [activeTab, setActiveTab] = useState<'notes' | 'transactions'>('transactions');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'notes' | 'transactions'>('dashboard');
+  const [views, setViews] = useState<ViewEvent[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const [pdfFile, setPdfFile] = useState<File | null>(null);
   const [thumbFile, setThumbFile] = useState<File | null>(null);
@@ -41,7 +46,17 @@ export default function Admin({ user }: AdminProps) {
     }
     fetchNotes();
     fetchTransactions();
+    fetchViews();
   }, [user, isAdmin]);
+
+  const fetchViews = async () => {
+    try {
+      const snapshot = await getDocs(collection(db, 'views'));
+      setViews(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ViewEvent)));
+    } catch (err) {
+      console.error("Error fetching views:", err);
+    }
+  };
 
   const fetchNotes = async () => {
     try {
@@ -64,14 +79,27 @@ export default function Admin({ user }: AdminProps) {
 
   const handleApprove = async (transId: string) => {
     try {
+      const trans = transactions.find(t => t.id === transId);
+      if (!trans) return;
+
       const downloadToken = Math.random().toString(36).substring(2, 15);
       await updateDoc(doc(db, 'transactions', transId), {
         status: TransactionStatus.APPROVED,
         downloadToken,
         updatedAt: serverTimestamp()
       });
+
+      // Increment soldCount for each note
+      const itemsToUpdate = trans.items || (trans.noteId ? [{ id: trans.noteId }] : []);
+      for (const item of itemsToUpdate) {
+        await updateDoc(doc(db, 'notes', item.id), {
+          soldCount: increment(1)
+        });
+      }
+
       toast.success("Transaction Approved!");
       fetchTransactions();
+      fetchNotes();
     } catch (err) {
       console.error(err);
       toast.error("Failed to approve.");
@@ -192,6 +220,49 @@ export default function Admin({ user }: AdminProps) {
     setThumbFile(null);
   };
 
+  const dashboardStats = useMemo(() => {
+    const approvedTrans = transactions.filter(t => t.status === TransactionStatus.APPROVED);
+    const totalEarnings = approvedTrans.reduce((sum, t) => sum + t.amount, 0);
+    const totalSales = approvedTrans.length;
+
+    // View analysis
+    const now = new Date();
+    const dayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+    const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+
+    const dailyViews = views.filter(v => v.timestamp?.toDate() > dayAgo).length;
+    const weeklyViews = views.filter(v => v.timestamp?.toDate() > weekAgo).length;
+    const monthlyViews = views.filter(v => v.timestamp?.toDate() > monthAgo).length;
+
+    // Views per note
+    const noteViews = notes.map(note => ({
+      name: note.title.substring(0, 15) + '...',
+      views: views.filter(v => v.noteId === note.id).length,
+      sales: approvedTrans.filter(t => t.items?.some(it => it.id === note.id) || t.noteId === note.id).length
+    })).sort((a, b) => b.views - a.views);
+
+    // Earnings over time (last 7 days)
+    const last7Days = Array.from({ length: 7 }).map((_, i) => {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      const dateStr = d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
+      const dayEarnings = approvedTrans.filter(t => t.createdAt?.toDate().toDateString() === d.toDateString()).reduce((sum, t) => sum + t.amount, 0);
+      const dayViews = views.filter(v => v.timestamp?.toDate().toDateString() === d.toDateString()).length;
+      return { name: dateStr, earnings: dayEarnings, views: dayViews, date: d };
+    }).reverse();
+
+    return {
+      totalEarnings,
+      totalSales,
+      dailyViews,
+      weeklyViews,
+      monthlyViews,
+      noteViews,
+      last7Days
+    };
+  }, [transactions, views, notes]);
+
   const handleDelete = async (noteId: string) => {
     if (confirm("Are you sure?")) {
       try {
@@ -224,6 +295,14 @@ export default function Admin({ user }: AdminProps) {
         
         <div className="flex bg-gray-100 dark:bg-gray-800 p-1.5 rounded-2xl transition-colors">
           <button
+            onClick={() => setActiveTab('dashboard')}
+            className={`px-6 py-2.5 rounded-xl text-sm font-bold transition-all ${
+              activeTab === 'dashboard' ? 'bg-white dark:bg-gray-700 text-blue-600 dark:text-blue-400 shadow-sm' : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+            }`}
+          >
+            Dashboard
+          </button>
+          <button
             onClick={() => setActiveTab('transactions')}
             className={`px-6 py-2.5 rounded-xl text-sm font-bold transition-all ${
               activeTab === 'transactions' ? 'bg-white dark:bg-gray-700 text-blue-600 dark:text-blue-400 shadow-sm' : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
@@ -243,7 +322,145 @@ export default function Admin({ user }: AdminProps) {
       </div>
 
       <AnimatePresence mode="wait">
-        {activeTab === 'transactions' ? (
+        {activeTab === 'dashboard' ? (
+          <motion.div
+            key="dashboard"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            className="space-y-10"
+          >
+            {/* Quick Stats */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              <div className="bg-white dark:bg-gray-900 p-8 rounded-[2.5rem] border border-gray-100 dark:border-gray-800 shadow-sm transition-all hover:shadow-xl group">
+                <div className="bg-blue-50 dark:bg-blue-900/20 w-12 h-12 rounded-2xl flex items-center justify-center text-blue-600 dark:text-blue-400 mb-6 group-hover:scale-110 transition-transform">
+                   <DollarSign className="w-6 h-6" />
+                </div>
+                <p className="text-sm font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-1">Total Revenue</p>
+                <h3 className="text-4xl font-black text-gray-900 dark:text-white transition-colors">₹{dashboardStats.totalEarnings}</h3>
+              </div>
+
+              <div className="bg-white dark:bg-gray-900 p-8 rounded-[2.5rem] border border-gray-100 dark:border-gray-800 shadow-sm transition-all hover:shadow-xl group">
+                <div className="bg-green-50 dark:bg-green-900/20 w-12 h-12 rounded-2xl flex items-center justify-center text-green-600 dark:text-green-400 mb-6 group-hover:scale-110 transition-transform">
+                   <CheckCircle2 className="w-6 h-6" />
+                </div>
+                <p className="text-sm font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-1">Total Sales</p>
+                <h3 className="text-4xl font-black text-gray-900 dark:text-white transition-colors">{dashboardStats.totalSales}</h3>
+              </div>
+
+              <div className="bg-white dark:bg-gray-900 p-8 rounded-[2.5rem] border border-gray-100 dark:border-gray-800 shadow-sm transition-all hover:shadow-xl group">
+                <div className="bg-purple-50 dark:bg-purple-900/20 w-12 h-12 rounded-2xl flex items-center justify-center text-purple-600 dark:text-purple-400 mb-6 group-hover:scale-110 transition-transform">
+                   <Eye className="w-6 h-6" />
+                </div>
+                <p className="text-sm font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-1">Total Views</p>
+                <h3 className="text-4xl font-black text-gray-900 dark:text-white transition-colors">{views.length}</h3>
+              </div>
+
+              <div className="bg-white dark:bg-gray-900 p-8 rounded-[2.5rem] border border-gray-100 dark:border-gray-800 shadow-sm transition-all hover:shadow-xl group">
+                <div className="bg-orange-50 dark:bg-orange-900/20 w-12 h-12 rounded-2xl flex items-center justify-center text-orange-600 dark:text-orange-400 mb-6 group-hover:scale-110 transition-transform">
+                   <Clock className="w-6 h-6" />
+                </div>
+                <p className="text-sm font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-1">Today's Views</p>
+                <h3 className="text-4xl font-black text-gray-900 dark:text-white transition-colors">{dashboardStats.dailyViews}</h3>
+              </div>
+            </div>
+
+            {/* Charts Section */}
+            <div className="grid lg:grid-cols-2 gap-10">
+              <div className="bg-white dark:bg-gray-900 p-8 rounded-[3rem] border border-gray-100 dark:border-gray-800 transition-colors">
+                <h3 className="text-xl font-black mb-8 dark:text-white">Earnings & Views (Last 7 Days)</h3>
+                <div className="h-[300px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={dashboardStats.last7Days}>
+                      <defs>
+                        <linearGradient id="colorEarnings" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#2563eb" stopOpacity={0.3}/>
+                          <stop offset="95%" stopColor="#2563eb" stopOpacity={0}/>
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                      <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 700, fill: '#94a3b8' }} />
+                      <YAxis yAxisId="left" axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 700, fill: '#94a3b8' }} />
+                      <YAxis yAxisId="right" orientation="right" axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 700, fill: '#94a3b8' }} />
+                      <Tooltip 
+                        contentStyle={{ 
+                          backgroundColor: '#fff', 
+                          borderRadius: '16px', 
+                          border: 'none', 
+                          boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)',
+                          fontWeight: 700 
+                        }} 
+                      />
+                      <Area yAxisId="left" type="monotone" dataKey="earnings" stroke="#2563eb" strokeWidth={3} fillOpacity={1} fill="url(#colorEarnings)" />
+                      <Area yAxisId="right" type="monotone" dataKey="views" stroke="#ef4444" strokeWidth={3} fillOpacity={0} />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+
+              <div className="bg-white dark:bg-gray-900 p-8 rounded-[3rem] border border-gray-100 dark:border-gray-800 transition-colors">
+                <h3 className="text-xl font-black mb-8 dark:text-white">Note Popularity (Views vs Sales)</h3>
+                <div className="h-[300px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={dashboardStats.noteViews.slice(0, 5)}>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                      <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 700, fill: '#94a3b8' }} />
+                      <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 700, fill: '#94a3b8' }} />
+                      <Tooltip cursor={{ fill: 'transparent' }} />
+                      <Bar dataKey="views" fill="#3b82f6" radius={[6, 6, 0, 0]} />
+                      <Bar dataKey="sales" fill="#10b981" radius={[6, 6, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+            </div>
+
+            {/* In-depth Analytics Table */}
+            <div className="bg-white dark:bg-gray-900 p-10 rounded-[3rem] border border-gray-100 dark:border-gray-800 transition-colors overflow-hidden">
+               <h3 className="text-2xl font-black mb-8 dark:text-white capitalize">PDF Performance Analysis</h3>
+               <div className="overflow-x-auto">
+                 <table className="w-full">
+                   <thead>
+                     <tr className="text-left border-b border-gray-50 dark:border-gray-800">
+                        <th className="pb-4 text-xs font-black text-gray-400 uppercase tracking-widest">PDF Title</th>
+                        <th className="pb-4 text-xs font-black text-gray-400 uppercase tracking-widest text-center">Total Views</th>
+                        <th className="pb-4 text-xs font-black text-gray-400 uppercase tracking-widest text-center">Sales</th>
+                        <th className="pb-4 text-xs font-black text-gray-400 uppercase tracking-widest text-center">Conversion</th>
+                        <th className="pb-4 text-xs font-black text-gray-400 uppercase tracking-widest text-right">Revenue</th>
+                     </tr>
+                   </thead>
+                   <tbody className="divide-y divide-gray-50 dark:divide-gray-800">
+                     {notes.map(note => {
+                       const vCount = views.filter(v => v.noteId === note.id).length;
+                       const sCount = transactions.filter(t => (t.status === TransactionStatus.APPROVED) && (t.items?.some(it => it.id === note.id) || t.noteId === note.id)).length;
+                       const convRate = vCount > 0 ? ((sCount / vCount) * 100).toFixed(1) : '0';
+                       const revenue = sCount * note.price;
+                       
+                       return (
+                         <tr key={note.id} className="group hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
+                            <td className="py-6 pr-4">
+                               <div className="flex items-center gap-3">
+                                  <img src={note.thumbnailUrl} className="w-10 h-10 rounded-lg object-cover" />
+                                  <span className="font-bold text-gray-900 dark:text-white line-clamp-1">{note.title}</span>
+                               </div>
+                            </td>
+                            <td className="py-6 text-center font-bold text-blue-600 dark:text-blue-400">{vCount}</td>
+                            <td className="py-6 text-center font-bold text-gray-900 dark:text-white">{sCount}</td>
+                            <td className="py-6 text-center">
+                               <span className={`px-3 py-1 rounded-full text-[10px] font-black ${Number(convRate) > 5 ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'}`}>
+                                  {convRate}%
+                               </span>
+                            </td>
+                            <td className="py-6 text-right font-black text-gray-900 dark:text-white">₹{revenue}</td>
+                         </tr>
+                       );
+                     })}
+                   </tbody>
+                 </table>
+               </div>
+            </div>
+          </motion.div>
+        ) : activeTab === 'transactions' ? (
           <motion.div
             key="transactions"
             initial={{ opacity: 0, y: 10 }}

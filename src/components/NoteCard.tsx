@@ -2,6 +2,7 @@ import React from 'react';
 import { Note } from '../types';
 import { motion } from 'motion/react';
 import { Download, Star, Clock, ShoppingBag } from 'lucide-react';
+import { logView } from '../lib/firebase';
 
 interface NoteCardProps {
   note: Note;
@@ -11,12 +12,17 @@ interface NoteCardProps {
 }
 
 const NoteCard: React.FC<NoteCardProps> = ({ note, onBuy, onAddToCart, isInCart }) => {
+  const handleClick = () => {
+    logView(note.id);
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       whileHover={{ y: -5 }}
-      className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col group"
+      onClick={handleClick}
+      className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col group cursor-pointer"
     >
       <div className="relative aspect-[4/5] overflow-hidden bg-gray-100 dark:bg-gray-800">
         <img
