@@ -108,15 +108,26 @@ export default function Navbar({ user }: NavbarProps) {
             )}
 
             {isAdmin && (
-              <Link
-                to="/admin"
-                className={`flex items-center gap-1.5 text-sm font-bold transition-all ${
-                  location.pathname === '/admin' ? 'text-blue-600' : 'text-gray-500 hover:text-gray-900 dark:hover:text-white'
-                }`}
-              >
-                <LayoutDashboard className="w-4 h-4" />
-                <span className="hidden md:inline">Admin</span>
-              </Link>
+              <div className="flex items-center gap-1.5 sm:gap-4">
+                <Link
+                  to="/admin"
+                  className={`flex items-center gap-1.5 text-sm font-bold transition-all ${
+                    location.pathname === '/admin' ? 'text-blue-600' : 'text-gray-500 hover:text-gray-900 dark:hover:text-white'
+                  }`}
+                >
+                  <LayoutDashboard className="w-4 h-4" />
+                  <span className="hidden md:inline">Admin</span>
+                </Link>
+                <Link
+                  to="/blogger"
+                  className={`flex items-center gap-1.5 text-sm font-bold transition-all ${
+                    location.pathname === '/blogger' ? 'text-green-600' : 'text-gray-500 hover:text-gray-900 dark:hover:text-white'
+                  }`}
+                >
+                  <BookOpen className="w-4 h-4" />
+                  <span className="hidden md:inline">Blogger CMS</span>
+                </Link>
+              </div>
             )}
 
             <div className="h-6 w-px bg-gray-200 dark:bg-gray-800 mx-1" />

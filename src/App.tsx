@@ -7,6 +7,7 @@ import Download from './pages/Download';
 import Admin from './pages/Admin';
 import Purchases from './pages/Purchases';
 import Videos from './pages/Videos';
+import BloggerCMS from './pages/BloggerCMS';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import { ThemeProvider } from './lib/ThemeContext';
@@ -56,6 +57,7 @@ export default function App() {
                     <Route path="/" element={<Home user={user} />} />
                     <Route path="/download/:transactionId" element={<Download user={user} />} />
                     <Route path="/admin" element={<Admin user={user} />} />
+                    <Route path="/blogger" element={<BloggerCMS />} />
                     <Route path="/purchases" element={<Purchases user={user} />} />
                     <Route path="/videos" element={<Videos />} />
                   </Routes>
